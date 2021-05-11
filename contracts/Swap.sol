@@ -44,13 +44,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
 
     // events replicated from SwapUtils to make the ABI easier for dumb
     // clients
-    event TokenSwap(
-        address indexed buyer,
-        uint256 tokensSold,
-        uint256 tokensBought,
-        uint128 soldId,
-        uint128 boughtId
-    );
+    event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
     event AddLiquidity(
         address indexed provider,
         uint256[] tokenAmounts,
@@ -58,11 +52,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         uint256 invariant,
         uint256 lpTokenSupply
     );
-    event RemoveLiquidity(
-        address indexed provider,
-        uint256[] tokenAmounts,
-        uint256 lpTokenSupply
-    );
+    event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
     event RemoveLiquidityOne(
         address indexed provider,
         uint256 lpTokenAmount,
@@ -81,12 +71,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
     event NewSwapFee(uint256 newSwapFee);
     event NewDepositFee(uint256 newDepositFee);
     event NewWithdrawFee(uint256 newWithdrawFee);
-    event RampA(
-        uint256 oldA,
-        uint256 newA,
-        uint256 initialTime,
-        uint256 futureTime
-    );
+    event RampA(uint256 oldA, uint256 newA, uint256 initialTime, uint256 futureTime);
     event StopRampA(uint256 currentA, uint256 time);
 
     /**
@@ -123,10 +108,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         // Check _pooledTokens and precisions parameter
         require(_pooledTokens.length > 1, "_pooledTokens.length <= 1");
         require(_pooledTokens.length <= 32, "_pooledTokens.length > 32");
-        require(
-            _pooledTokens.length == decimals.length,
-            "_pooledTokens decimals mismatch"
-        );
+        require(_pooledTokens.length == decimals.length, "_pooledTokens decimals mismatch");
 
         uint256[] memory precisionMultipliers = new uint256[](decimals.length);
 
@@ -134,49 +116,25 @@ contract Swap is OwnerPausable, ReentrancyGuard {
             if (i > 0) {
                 // Check if index is already used. Check if 0th element is a duplicate.
                 require(
-                    tokenIndexes[address(_pooledTokens[i])] == 0 &&
-                        _pooledTokens[0] != _pooledTokens[i],
+                    tokenIndexes[address(_pooledTokens[i])] == 0 && _pooledTokens[0] != _pooledTokens[i],
                     "Duplicate tokens"
                 );
             }
-            require(
-                address(_pooledTokens[i]) != address(0),
-                "The 0 address isn't an ERC-20"
-            );
-            require(
-                decimals[i] <= SwapUtils.POOL_PRECISION_DECIMALS,
-                "Token decimals exceeds max"
-            );
-            precisionMultipliers[i] =
-                10 **
-                    uint256(SwapUtils.POOL_PRECISION_DECIMALS).sub(
-                        uint256(decimals[i])
-                    );
+            require(address(_pooledTokens[i]) != address(0), "The 0 address isn't an ERC-20");
+            require(decimals[i] <= SwapUtils.POOL_PRECISION_DECIMALS, "Token decimals exceeds max");
+            precisionMultipliers[i] = 10**uint256(SwapUtils.POOL_PRECISION_DECIMALS).sub(uint256(decimals[i]));
             tokenIndexes[address(_pooledTokens[i])] = i;
         }
 
         // Check _a, _fee, _adminFee, _depositFee, _withdrawFee
         require(_a < SwapUtils.MAX_A, "_a exceeds maximum");
         require(_fee < SwapUtils.MAX_SWAP_FEE, "_fee exceeds maximum");
-        require(
-            _adminFee < SwapUtils.MAX_ADMIN_FEE,
-            "_adminFee exceeds maximum"
-        );
-        require(
-            _withdrawFee < SwapUtils.MAX_WITHDRAW_FEE,
-            "_withdrawFee exceeds maximum"
-        );
-        require(
-            _depositFee < SwapUtils.MAX_DEPOSIT_FEE,
-            "_depositFee exceeds maximum"
-        );
+        require(_adminFee < SwapUtils.MAX_ADMIN_FEE, "_adminFee exceeds maximum");
+        require(_withdrawFee < SwapUtils.MAX_WITHDRAW_FEE, "_withdrawFee exceeds maximum");
+        require(_depositFee < SwapUtils.MAX_DEPOSIT_FEE, "_depositFee exceeds maximum");
 
         // Initialize swapStorage struct
-        swapStorage.lpToken = new LPToken(
-            lpTokenName,
-            lpTokenSymbol,
-            SwapUtils.POOL_PRECISION_DECIMALS
-        );
+        swapStorage.lpToken = new LPToken(lpTokenName, lpTokenSymbol, SwapUtils.POOL_PRECISION_DECIMALS);
         swapStorage.pooledTokens = _pooledTokens;
         swapStorage.tokenPrecisionMultipliers = precisionMultipliers;
         swapStorage.balances = new uint256[](_pooledTokens.length);
@@ -189,7 +147,6 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         swapStorage.defaultDepositFee = _depositFee;
         swapStorage.defaultWithdrawFee = _withdrawFee;
         swapStorage.devaddr = _devaddr;
-
     }
 
     /*** MODIFIERS ***/
@@ -241,10 +198,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
      */
     function getTokenIndex(address tokenAddress) external view returns (uint8) {
         uint8 index = tokenIndexes[tokenAddress];
-        require(
-            address(getToken(index)) == tokenAddress,
-            "Token does not exist"
-        );
+        require(address(getToken(index)) == tokenAddress, "Token does not exist");
         return index;
     }
 
@@ -321,11 +275,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
      * @param amount the amount of LP tokens that would be burned on withdrawal
      * @return array of token balances that the user will receive
      */
-    function calculateRemoveLiquidity(address account, uint256 amount)
-        external
-        view
-        returns (uint256[] memory)
-    {
+    function calculateRemoveLiquidity(address account, uint256 amount) external view returns (uint256[] memory) {
         return swapStorage.calculateRemoveLiquidity(account, amount);
     }
 
@@ -343,11 +293,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         uint256 tokenAmount,
         uint8 tokenIndex
     ) external view returns (uint256 availableTokenAmount) {
-        (availableTokenAmount, ) = swapStorage.calculateWithdrawOneToken(
-            account,
-            tokenAmount,
-            tokenIndex
-        );
+        (availableTokenAmount, ) = swapStorage.calculateWithdrawOneToken(account, tokenAmount, tokenIndex);
     }
 
     /**
@@ -359,11 +305,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
      * @param user address you want to calculate withdraw fee of
      * @return current withdraw fee of the user
      */
-    function calculateCurrentWithdrawFee(address user)
-        external
-        view
-        returns (uint256)
-    {
+    function calculateCurrentWithdrawFee(address user) external view returns (uint256) {
         return swapStorage.calculateCurrentWithdrawFee(user);
     }
 
@@ -392,13 +334,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         uint256 dx,
         uint256 minDy,
         uint256 deadline
-    )
-        external
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
+    ) external nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
         return swapStorage.swap(tokenIndexFrom, tokenIndexTo, dx, minDy);
     }
 
@@ -414,13 +350,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         uint256[] calldata amounts,
         uint256 minToMint,
         uint256 deadline
-    )
-        external
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
+    ) external nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
         return swapStorage.addLiquidity(amounts, minToMint);
     }
 
@@ -456,19 +386,8 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         uint8 tokenIndex,
         uint256 minAmount,
         uint256 deadline
-    )
-        external
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
-        return
-            swapStorage.removeLiquidityOneToken(
-                tokenAmount,
-                tokenIndex,
-                minAmount
-            );
+    ) external nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
+        return swapStorage.removeLiquidityOneToken(tokenAmount, tokenIndex, minAmount);
     }
 
     /**
@@ -485,13 +404,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         uint256[] calldata amounts,
         uint256 maxBurnAmount,
         uint256 deadline
-    )
-        external
-        nonReentrant
-        whenNotPaused
-        deadlineCheck(deadline)
-        returns (uint256)
-    {
+    ) external nonReentrant whenNotPaused deadlineCheck(deadline) returns (uint256) {
         return swapStorage.removeLiquidityImbalance(amounts, maxBurnAmount);
     }
 
@@ -505,13 +418,8 @@ contract Swap is OwnerPausable, ReentrancyGuard {
      * @param recipient address of the recipient of pool token
      * @param transferAmount amount of pool token to transfer
      */
-    function updateUserWithdrawFee(address recipient, uint256 transferAmount)
-        external
-    {
-        require(
-            msg.sender == address(swapStorage.lpToken),
-            "Only callable by pool token"
-        );
+    function updateUserWithdrawFee(address recipient, uint256 transferAmount) external {
+        require(msg.sender == address(swapStorage.lpToken), "Only callable by pool token");
         swapStorage.updateUserWithdrawFee(recipient, transferAmount);
     }
 
@@ -538,8 +446,8 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         swapStorage.setSwapFee(newSwapFee);
     }
 
-        /**
-     * @notice Update the deposit fee. 
+    /**
+     * @notice Update the deposit fee.
      * @param newDepositFee new deposit fee to be applied on future deposits
      */
     function setDefaultDepositFee(uint256 newDepositFee) external onlyOwner {
@@ -573,7 +481,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         swapStorage.stopRampA();
     }
 
-        // Update dev address by the previous dev.
+    // Update dev address by the previous dev.
     function setDevAddress(address _devaddr) external onlyOwner {
         swapStorage.setDevAddress(_devaddr);
     }

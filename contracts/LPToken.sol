@@ -41,10 +41,7 @@ contract LPToken is ERC20Burnable, Ownable {
      * @param recipient address of account to receive the tokens
      * @param amount amount of tokens to mint
      */
-    function mint(
-        address recipient,
-        uint256 amount
-    ) external onlyOwner {
+    function mint(address recipient, uint256 amount) external onlyOwner {
         require(amount != 0, "amount == 0");
         _mint(recipient, amount);
     }

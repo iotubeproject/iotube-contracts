@@ -21,13 +21,7 @@ library SwapUtils {
 
     /*** EVENTS ***/
 
-    event TokenSwap(
-        address indexed buyer,
-        uint256 tokensSold,
-        uint256 tokensBought,
-        uint128 soldId,
-        uint128 boughtId
-    );
+    event TokenSwap(address indexed buyer, uint256 tokensSold, uint256 tokensBought, uint128 soldId, uint128 boughtId);
     event AddLiquidity(
         address indexed provider,
         uint256[] tokenAmounts,
@@ -35,11 +29,7 @@ library SwapUtils {
         uint256 invariant,
         uint256 lpTokenSupply
     );
-    event RemoveLiquidity(
-        address indexed provider,
-        uint256[] tokenAmounts,
-        uint256 lpTokenSupply
-    );
+    event RemoveLiquidity(address indexed provider, uint256[] tokenAmounts, uint256 lpTokenSupply);
     event RemoveLiquidityOne(
         address indexed provider,
         uint256 lpTokenAmount,
@@ -58,12 +48,7 @@ library SwapUtils {
     event NewSwapFee(uint256 newSwapFee);
     event NewWithdrawFee(uint256 newWithdrawFee);
     event NewDepositFee(uint256 newDepositFee);
-    event RampA(
-        uint256 oldA,
-        uint256 newA,
-        uint256 initialTime,
-        uint256 futureTime
-    );
+    event RampA(uint256 oldA, uint256 newA, uint256 initialTime, uint256 futureTime);
     event StopRampA(uint256 currentA, uint256 time);
 
     struct Swap {
@@ -145,7 +130,7 @@ library SwapUtils {
 
     // Max depositFee is 1% of the value deposited
     uint256 public constant MAX_DEPOSIT_FEE = 10**8;
-    
+
     // Constant value used as max loop limit
     uint256 private constant MAX_LOOP_LIMIT = 256;
 
@@ -202,16 +187,10 @@ library SwapUtils {
             uint256 a0 = self.initialA; // initial A value when ramp is started
             if (a1 > a0) {
                 // a0 + (a1 - a0) * (block.timestamp - t0) / (t1 - t0)
-                return
-                    a0.add(
-                        a1.sub(a0).mul(block.timestamp.sub(t0)).div(t1.sub(t0))
-                    );
+                return a0.add(a1.sub(a0).mul(block.timestamp.sub(t0)).div(t1.sub(t0)));
             } else {
                 // a0 - (a0 - a1) * (block.timestamp - t0) / (t1 - t0)
-                return
-                    a0.sub(
-                        a0.sub(a1).mul(block.timestamp.sub(t0)).div(t1.sub(t0))
-                    );
+                return a0.sub(a0.sub(a1).mul(block.timestamp.sub(t0)).div(t1.sub(t0)));
             }
         } else {
             return a1;
@@ -223,11 +202,7 @@ library SwapUtils {
      * @param self Swap struct to read from
      * @return timestamp of last deposit
      */
-    function getDepositTimestamp(Swap storage self, address user)
-        external
-        view
-        returns (uint256)
-    {
+    function getDepositTimestamp(Swap storage self, address user) external view returns (uint256) {
         return self.depositTimestamp[user];
     }
 
@@ -254,17 +229,9 @@ library SwapUtils {
         // dy_0 (without fees)
         // dy, dy_0 - dy
 
-        uint256 dySwapFee =
-            _xp(self)[tokenIndex]
-                .sub(newY)
-                .div(self.tokenPrecisionMultipliers[tokenIndex])
-                .sub(dy);
+        uint256 dySwapFee = _xp(self)[tokenIndex].sub(newY).div(self.tokenPrecisionMultipliers[tokenIndex]).sub(dy);
 
-        dy = dy
-            .mul(
-            FEE_DENOMINATOR.sub(calculateCurrentWithdrawFee(self, account))
-        )
-            .div(FEE_DENOMINATOR);
+        dy = dy.mul(FEE_DENOMINATOR.sub(calculateCurrentWithdrawFee(self, account))).div(FEE_DENOMINATOR);
 
         return (dy, dySwapFee);
     }
@@ -281,16 +248,12 @@ library SwapUtils {
         uint8 tokenIndex,
         uint256 tokenAmount
     ) internal view returns (uint256, uint256) {
-        require(
-            tokenIndex < self.pooledTokens.length,
-            "Token index out of range"
-        );
+        require(tokenIndex < self.pooledTokens.length, "Token index out of range");
 
         // Get the current D, then solve the stableswap invariant
         // y_i for D - tokenAmount
         uint256[] memory xp = _xp(self);
-        CalculateWithdrawOneTokenDYInfo memory v =
-            CalculateWithdrawOneTokenDYInfo(0, 0, 0, 0, 0);
+        CalculateWithdrawOneTokenDYInfo memory v = CalculateWithdrawOneTokenDYInfo(0, 0, 0, 0, 0);
         v.preciseA = _getAPrecise(self);
         v.d0 = getD(xp, v.preciseA);
         v.d1 = v.d0.sub(tokenAmount.mul(v.d0).div(self.lpToken.totalSupply()));
@@ -308,20 +271,13 @@ library SwapUtils {
             // else dxExpected = xp[i] - (xp[i] * d1 / d0)
             // xpReduced[i] -= dxExpected * fee / FEE_DENOMINATOR
             xpReduced[i] = xpi.sub(
-                (
-                    (i == tokenIndex)
-                        ? xpi.mul(v.d1).div(v.d0).sub(v.newY)
-                        : xpi.sub(xpi.mul(v.d1).div(v.d0))
-                )
+                ((i == tokenIndex) ? xpi.mul(v.d1).div(v.d0).sub(v.newY) : xpi.sub(xpi.mul(v.d1).div(v.d0)))
                     .mul(v.feePerToken)
                     .div(FEE_DENOMINATOR)
             );
         }
 
-        uint256 dy =
-            xpReduced[tokenIndex].sub(
-                getYD(v.preciseA, tokenIndex, xpReduced, v.d1)
-            );
+        uint256 dy = xpReduced[tokenIndex].sub(getYD(v.preciseA, tokenIndex, xpReduced, v.d1));
         dy = dy.sub(1).div(self.tokenPrecisionMultipliers[tokenIndex]);
 
         return (dy, v.newY);
@@ -390,11 +346,7 @@ library SwapUtils {
      * See the StableSwap paper for details
      * @return the invariant, at the precision of the pool
      */
-    function getD(uint256[] memory xp, uint256 a)
-        internal
-        pure
-        returns (uint256)
-    {
+    function getD(uint256[] memory xp, uint256 a) internal pure returns (uint256) {
         uint256 numTokens = xp.length;
         uint256 s;
         for (uint256 i = 0; i < numTokens; i++) {
@@ -418,9 +370,7 @@ library SwapUtils {
             }
             prevD = d;
             d = nA.mul(s).div(A_PRECISION).add(dP.mul(numTokens)).mul(d).div(
-                nA.sub(A_PRECISION).mul(d).div(A_PRECISION).add(
-                    numTokens.add(1).mul(dP)
-                )
+                nA.sub(A_PRECISION).mul(d).div(A_PRECISION).add(numTokens.add(1).mul(dP))
             );
             if (d.within1(prevD)) {
                 return d;
@@ -455,15 +405,13 @@ library SwapUtils {
      *
      * @return an array of amounts "scaled" to the pool's precision
      */
-    function _xp(
-        uint256[] memory balances,
-        uint256[] memory precisionMultipliers
-    ) internal pure returns (uint256[] memory) {
+    function _xp(uint256[] memory balances, uint256[] memory precisionMultipliers)
+        internal
+        pure
+        returns (uint256[] memory)
+    {
         uint256 numTokens = balances.length;
-        require(
-            numTokens == precisionMultipliers.length,
-            "Balances must match multipliers"
-        );
+        require(numTokens == precisionMultipliers.length, "Balances must match multipliers");
         uint256[] memory xp = new uint256[](numTokens);
         for (uint256 i = 0; i < numTokens; i++) {
             xp[i] = balances[i].mul(precisionMultipliers[i]);
@@ -478,11 +426,7 @@ library SwapUtils {
      * @return balances array "scaled" to the pool's precision, allowing
      * them to be more easily compared.
      */
-    function _xp(Swap storage self, uint256[] memory balances)
-        internal
-        view
-        returns (uint256[] memory)
-    {
+    function _xp(Swap storage self, uint256[] memory balances) internal view returns (uint256[] memory) {
         return _xp(balances, self.tokenPrecisionMultipliers);
     }
 
@@ -501,16 +445,11 @@ library SwapUtils {
      * @param self Swap struct to read from
      * @return the virtual price, scaled to precision of POOL_PRECISION_DECIMALS
      */
-    function getVirtualPrice(Swap storage self)
-        external
-        view
-        returns (uint256)
-    {
+    function getVirtualPrice(Swap storage self) external view returns (uint256) {
         uint256 d = getD(_xp(self), _getAPrecise(self));
         uint256 supply = self.lpToken.totalSupply();
         if (supply > 0) {
-            return
-                d.mul(10**uint256(ERC20(self.lpToken).decimals())).div(supply);
+            return d.mul(10**uint256(ERC20(self.lpToken).decimals())).div(supply);
         }
         return 0;
     }
@@ -536,14 +475,8 @@ library SwapUtils {
         uint256[] memory xp
     ) internal view returns (uint256) {
         uint256 numTokens = self.pooledTokens.length;
-        require(
-            tokenIndexFrom != tokenIndexTo,
-            "Can't compare token to itself"
-        );
-        require(
-            tokenIndexFrom < numTokens && tokenIndexTo < numTokens,
-            "Tokens must be in pool"
-        );
+        require(tokenIndexFrom != tokenIndexTo, "Can't compare token to itself");
+        require(tokenIndexFrom < numTokens && tokenIndexTo < numTokens, "Tokens must be in pool");
 
         uint256 a = _getAPrecise(self);
         uint256 d = getD(xp, a);
@@ -621,14 +554,8 @@ library SwapUtils {
         uint256 dx
     ) internal view returns (uint256 dy, uint256 dyFee) {
         uint256[] memory xp = _xp(self);
-        require(
-            tokenIndexFrom < xp.length && tokenIndexTo < xp.length,
-            "Token index out of range"
-        );
-        uint256 x =
-            dx.mul(self.tokenPrecisionMultipliers[tokenIndexFrom]).add(
-                xp[tokenIndexFrom]
-            );
+        require(tokenIndexFrom < xp.length && tokenIndexTo < xp.length, "Token index out of range");
+        uint256 x = dx.mul(self.tokenPrecisionMultipliers[tokenIndexFrom]).add(xp[tokenIndexFrom]);
         uint256 y = getY(self, tokenIndexFrom, tokenIndexTo, x, xp);
         dy = xp[tokenIndexTo].sub(y).sub(1);
         dyFee = dy.mul(self.swapFee).div(FEE_DENOMINATOR);
@@ -662,18 +589,12 @@ library SwapUtils {
         require(amount <= totalSupply, "Cannot exceed total supply");
 
         uint256 feeAdjustedAmount =
-            amount
-                .mul(
-                FEE_DENOMINATOR.sub(calculateCurrentWithdrawFee(self, account))
-            )
-                .div(FEE_DENOMINATOR);
+            amount.mul(FEE_DENOMINATOR.sub(calculateCurrentWithdrawFee(self, account))).div(FEE_DENOMINATOR);
 
         uint256[] memory amounts = new uint256[](self.pooledTokens.length);
 
         for (uint256 i = 0; i < self.pooledTokens.length; i++) {
-            amounts[i] = self.balances[i].mul(feeAdjustedAmount).div(
-                totalSupply
-            );
+            amounts[i] = self.balances[i].mul(feeAdjustedAmount).div(totalSupply);
         }
         return amounts;
     }
@@ -684,21 +605,14 @@ library SwapUtils {
      * @param user address you want to calculate withdraw fee of
      * @return current withdraw fee of the user
      */
-    function calculateCurrentWithdrawFee(Swap storage self, address user)
-        public
-        view
-        returns (uint256)
-    {
+    function calculateCurrentWithdrawFee(Swap storage self, address user) public view returns (uint256) {
         uint256 endTime = self.depositTimestamp[user].add(4 weeks);
         if (endTime > block.timestamp) {
             uint256 timeLeftover = endTime.sub(block.timestamp);
             return
-                self
-                    .defaultWithdrawFee
-                    .mul(self.withdrawFeeMultiplier[user])
-                    .mul(timeLeftover)
-                    .div(4 weeks)
-                    .div(FEE_DENOMINATOR);
+                self.defaultWithdrawFee.mul(self.withdrawFeeMultiplier[user]).mul(timeLeftover).div(4 weeks).div(
+                    FEE_DENOMINATOR
+                );
         }
         return 0;
     }
@@ -735,10 +649,7 @@ library SwapUtils {
             if (deposit) {
                 balances1[i] = balances1[i].add(amounts[i]);
             } else {
-                balances1[i] = balances1[i].sub(
-                    amounts[i],
-                    "Cannot withdraw more than available"
-                );
+                balances1[i] = balances1[i].sub(amounts[i], "Cannot withdraw more than available");
             }
         }
         uint256 d1 = getD(_xp(self, balances1), a);
@@ -749,9 +660,7 @@ library SwapUtils {
         } else {
             return
                 d0.sub(d1).mul(totalSupply).div(d0).mul(FEE_DENOMINATOR).div(
-                    FEE_DENOMINATOR.sub(
-                        calculateCurrentWithdrawFee(self, account)
-                    )
+                    FEE_DENOMINATOR.sub(calculateCurrentWithdrawFee(self, account))
                 );
         }
     }
@@ -762,16 +671,9 @@ library SwapUtils {
      * @param index Index of the pooled token
      * @return admin balance in the token's precision
      */
-    function getAdminBalance(Swap storage self, uint256 index)
-        external
-        view
-        returns (uint256)
-    {
+    function getAdminBalance(Swap storage self, uint256 index) external view returns (uint256) {
         require(index < self.pooledTokens.length, "Token index out of range");
-        return
-            self.pooledTokens[index].balanceOf(address(this)).sub(
-                self.balances[index]
-            );
+        return self.pooledTokens[index].balanceOf(address(this)).sub(self.balances[index]);
     }
 
     /**
@@ -780,10 +682,7 @@ library SwapUtils {
      * @param self Swap struct to read from
      */
     function _feePerToken(Swap storage self) internal view returns (uint256) {
-        return
-            self.swapFee.mul(self.pooledTokens.length).div(
-                self.pooledTokens.length.sub(1).mul(4)
-            );
+        return self.swapFee.mul(self.pooledTokens.length).div(self.pooledTokens.length.sub(1).mul(4));
     }
 
     /*** STATE MODIFYING FUNCTIONS ***/
@@ -804,51 +703,27 @@ library SwapUtils {
         uint256 dx,
         uint256 minDy
     ) external returns (uint256) {
-        require(
-            dx <= self.pooledTokens[tokenIndexFrom].balanceOf(msg.sender),
-            "Cannot swap more than you own"
-        );
+        require(dx <= self.pooledTokens[tokenIndexFrom].balanceOf(msg.sender), "Cannot swap more than you own");
 
         // Transfer tokens first to see if a fee was charged on transfer
-        uint256 beforeBalance =
-            self.pooledTokens[tokenIndexFrom].balanceOf(address(this));
-        self.pooledTokens[tokenIndexFrom].safeTransferFrom(
-            msg.sender,
-            address(this),
-            dx
-        );
+        uint256 beforeBalance = self.pooledTokens[tokenIndexFrom].balanceOf(address(this));
+        self.pooledTokens[tokenIndexFrom].safeTransferFrom(msg.sender, address(this), dx);
 
         // Use the actual transferred amount for AMM math
-        uint256 transferredDx =
-            self.pooledTokens[tokenIndexFrom].balanceOf(address(this)).sub(
-                beforeBalance
-            );
+        uint256 transferredDx = self.pooledTokens[tokenIndexFrom].balanceOf(address(this)).sub(beforeBalance);
 
-        (uint256 dy, uint256 dyFee) =
-            _calculateSwap(self, tokenIndexFrom, tokenIndexTo, transferredDx);
+        (uint256 dy, uint256 dyFee) = _calculateSwap(self, tokenIndexFrom, tokenIndexTo, transferredDx);
         require(dy >= minDy, "Swap didn't result in min tokens");
 
         uint256 dyAdminFee =
-            dyFee.mul(self.adminFee).div(FEE_DENOMINATOR).div(
-                self.tokenPrecisionMultipliers[tokenIndexTo]
-            );
+            dyFee.mul(self.adminFee).div(FEE_DENOMINATOR).div(self.tokenPrecisionMultipliers[tokenIndexTo]);
 
-        self.balances[tokenIndexFrom] = self.balances[tokenIndexFrom].add(
-            transferredDx
-        );
-        self.balances[tokenIndexTo] = self.balances[tokenIndexTo].sub(dy).sub(
-            dyAdminFee
-        );
+        self.balances[tokenIndexFrom] = self.balances[tokenIndexFrom].add(transferredDx);
+        self.balances[tokenIndexTo] = self.balances[tokenIndexTo].sub(dy).sub(dyAdminFee);
 
         self.pooledTokens[tokenIndexTo].safeTransfer(msg.sender, dy);
 
-        emit TokenSwap(
-            msg.sender,
-            transferredDx,
-            dy,
-            tokenIndexFrom,
-            tokenIndexTo
-        );
+        emit TokenSwap(msg.sender, transferredDx, dy, tokenIndexFrom, tokenIndexTo);
 
         return dy;
     }
@@ -866,10 +741,7 @@ library SwapUtils {
         uint256[] memory amounts,
         uint256 minToMint
     ) external returns (uint256) {
-        require(
-            amounts.length == self.pooledTokens.length,
-            "Amounts must match pooled tokens"
-        );
+        require(amounts.length == self.pooledTokens.length, "Amounts must match pooled tokens");
 
         uint256[] memory fees = new uint256[](self.pooledTokens.length);
         uint256 lpTotalSupply = self.lpToken.totalSupply();
@@ -882,25 +754,15 @@ library SwapUtils {
         uint256[] memory newBalances = self.balances;
 
         for (uint256 i = 0; i < self.pooledTokens.length; i++) {
-            require(
-                lpTotalSupply != 0 || amounts[i] > 0,
-                "Must supply all tokens in pool"
-            );
+            require(lpTotalSupply != 0 || amounts[i] > 0, "Must supply all tokens in pool");
 
             // Transfer tokens first to see if a fee was charged on transfer
             if (amounts[i] != 0) {
-                uint256 beforeBalance =
-                    self.pooledTokens[i].balanceOf(address(this));
-                self.pooledTokens[i].safeTransferFrom(
-                    msg.sender,
-                    address(this),
-                    amounts[i]
-                );
+                uint256 beforeBalance = self.pooledTokens[i].balanceOf(address(this));
+                self.pooledTokens[i].safeTransferFrom(msg.sender, address(this), amounts[i]);
 
                 // Update the amounts[] with actual transfer amount
-                amounts[i] = self.pooledTokens[i].balanceOf(address(this)).sub(
-                    beforeBalance
-                );
+                amounts[i] = self.pooledTokens[i].balanceOf(address(this)).sub(beforeBalance);
             }
 
             newBalances[i] = self.balances[i].add(amounts[i]);
@@ -917,12 +779,8 @@ library SwapUtils {
             uint256 feePerToken = _feePerToken(self);
             for (uint256 i = 0; i < self.pooledTokens.length; i++) {
                 uint256 idealBalance = v.d1.mul(self.balances[i]).div(v.d0);
-                fees[i] = feePerToken
-                    .mul(idealBalance.difference(newBalances[i]))
-                    .div(FEE_DENOMINATOR);
-                self.balances[i] = newBalances[i].sub(
-                    fees[i].mul(self.adminFee).div(FEE_DENOMINATOR)
-                );
+                fees[i] = feePerToken.mul(idealBalance.difference(newBalances[i])).div(FEE_DENOMINATOR);
+                self.balances[i] = newBalances[i].sub(fees[i].mul(self.adminFee).div(FEE_DENOMINATOR));
                 newBalances[i] = newBalances[i].sub(fees[i]);
             }
             v.d2 = getD(_xp(self, newBalances), v.preciseA);
@@ -951,14 +809,8 @@ library SwapUtils {
             self.lpToken.mint(self.devaddr, toMintFee);
             self.lpToken.mint(msg.sender, toMintUser);
         }
-       
-        emit AddLiquidity(
-            msg.sender,
-            amounts,
-            fees,
-            v.d1,
-            lpTotalSupply + toMint
-        );
+
+        emit AddLiquidity(msg.sender, amounts, fees, v.d1, lpTotalSupply + toMint);
 
         return toMint;
     }
@@ -1024,13 +876,9 @@ library SwapUtils {
         uint256[] calldata minAmounts
     ) external returns (uint256[] memory) {
         require(amount <= self.lpToken.balanceOf(msg.sender), ">LP.balanceOf");
-        require(
-            minAmounts.length == self.pooledTokens.length,
-            "minAmounts must match poolTokens"
-        );
+        require(minAmounts.length == self.pooledTokens.length, "minAmounts must match poolTokens");
 
-        uint256[] memory amounts =
-            _calculateRemoveLiquidity(self, msg.sender, amount);
+        uint256[] memory amounts = _calculateRemoveLiquidity(self, msg.sender, amount);
 
         for (uint256 i = 0; i < amounts.length; i++) {
             require(amounts[i] >= minAmounts[i], "amounts[i] < minAmounts[i]");
@@ -1061,21 +909,13 @@ library SwapUtils {
     ) external returns (uint256) {
         uint256 totalSupply = self.lpToken.totalSupply();
         uint256 numTokens = self.pooledTokens.length;
-        require(
-            tokenAmount <= self.lpToken.balanceOf(msg.sender),
-            ">LP.balanceOf"
-        );
+        require(tokenAmount <= self.lpToken.balanceOf(msg.sender), ">LP.balanceOf");
         require(tokenIndex < numTokens, "Token not found");
 
         uint256 dyFee;
         uint256 dy;
 
-        (dy, dyFee) = calculateWithdrawOneToken(
-            self,
-            msg.sender,
-            tokenAmount,
-            tokenIndex
-        );
+        (dy, dyFee) = calculateWithdrawOneToken(self, msg.sender, tokenAmount, tokenIndex);
 
         require(dy >= minAmount, "dy < minAmount");
 
@@ -1085,13 +925,7 @@ library SwapUtils {
         self.lpToken.burnFrom(msg.sender, tokenAmount);
         self.pooledTokens[tokenIndex].safeTransfer(msg.sender, dy);
 
-        emit RemoveLiquidityOne(
-            msg.sender,
-            tokenAmount,
-            totalSupply,
-            tokenIndex,
-            dy
-        );
+        emit RemoveLiquidityOne(msg.sender, tokenAmount, totalSupply, tokenIndex, dy);
 
         return dy;
     }
@@ -1111,18 +945,10 @@ library SwapUtils {
         uint256[] memory amounts,
         uint256 maxBurnAmount
     ) public returns (uint256) {
-        require(
-            amounts.length == self.pooledTokens.length,
-            "Amounts should match pool tokens"
-        );
-        require(
-            maxBurnAmount <= self.lpToken.balanceOf(msg.sender) &&
-                maxBurnAmount != 0,
-            ">LP.balanceOf"
-        );
+        require(amounts.length == self.pooledTokens.length, "Amounts should match pool tokens");
+        require(maxBurnAmount <= self.lpToken.balanceOf(msg.sender) && maxBurnAmount != 0, ">LP.balanceOf");
 
-        RemoveLiquidityImbalanceInfo memory v =
-            RemoveLiquidityImbalanceInfo(0, 0, 0, 0);
+        RemoveLiquidityImbalanceInfo memory v = RemoveLiquidityImbalanceInfo(0, 0, 0, 0);
 
         uint256 tokenSupply = self.lpToken.totalSupply();
         uint256 feePerToken = _feePerToken(self);
@@ -1132,10 +958,7 @@ library SwapUtils {
         v.preciseA = _getAPrecise(self);
         v.d0 = getD(_xp(self), v.preciseA);
         for (uint256 i = 0; i < self.pooledTokens.length; i++) {
-            balances1[i] = balances1[i].sub(
-                amounts[i],
-                "Cannot withdraw more than available"
-            );
+            balances1[i] = balances1[i].sub(amounts[i], "Cannot withdraw more than available");
         }
         v.d1 = getD(_xp(self, balances1), v.preciseA);
         uint256[] memory fees = new uint256[](self.pooledTokens.length);
@@ -1144,9 +967,7 @@ library SwapUtils {
             uint256 idealBalance = v.d1.mul(self.balances[i]).div(v.d0);
             uint256 difference = idealBalance.difference(balances1[i]);
             fees[i] = feePerToken.mul(difference).div(FEE_DENOMINATOR);
-            self.balances[i] = balances1[i].sub(
-                fees[i].mul(self.adminFee).div(FEE_DENOMINATOR)
-            );
+            self.balances[i] = balances1[i].sub(fees[i].mul(self.adminFee).div(FEE_DENOMINATOR));
             balances1[i] = balances1[i].sub(fees[i]);
         }
 
@@ -1166,13 +987,7 @@ library SwapUtils {
             self.pooledTokens[i].safeTransfer(msg.sender, amounts[i]);
         }
 
-        emit RemoveLiquidityImbalance(
-            msg.sender,
-            amounts,
-            fees,
-            v.d1,
-            tokenSupply.sub(tokenAmount)
-        );
+        emit RemoveLiquidityImbalance(msg.sender, amounts, fees, v.d1, tokenSupply.sub(tokenAmount));
 
         return tokenAmount;
     }
@@ -1185,8 +1000,7 @@ library SwapUtils {
     function withdrawAdminFees(Swap storage self, address to) external {
         for (uint256 i = 0; i < self.pooledTokens.length; i++) {
             IERC20 token = self.pooledTokens[i];
-            uint256 balance =
-                token.balanceOf(address(this)).sub(self.balances[i]);
+            uint256 balance = token.balanceOf(address(this)).sub(self.balances[i]);
             if (balance != 0) {
                 token.safeTransfer(to, balance);
             }
@@ -1224,9 +1038,7 @@ library SwapUtils {
      * @param self Swap struct to update
      * @param newWithdrawFee new withdraw fee to be applied
      */
-    function setDefaultWithdrawFee(Swap storage self, uint256 newWithdrawFee)
-        external
-    {
+    function setDefaultWithdrawFee(Swap storage self, uint256 newWithdrawFee) external {
         require(newWithdrawFee <= MAX_WITHDRAW_FEE, "Fee is too high");
         self.defaultWithdrawFee = newWithdrawFee;
 
@@ -1234,19 +1046,16 @@ library SwapUtils {
     }
 
     /**
-     * @notice update the default deposit fee. 
+     * @notice update the default deposit fee.
      * @param self Swap struct to update
      * @param newDepositFee new deposit fee to be applied
      */
-    function setDefaultDepositFee(Swap storage self, uint256 newDepositFee)
-        external
-    {
+    function setDefaultDepositFee(Swap storage self, uint256 newDepositFee) external {
         require(newDepositFee <= MAX_DEPOSIT_FEE, "Fee is too high");
         self.defaultDepositFee = newDepositFee;
 
         emit NewDepositFee(newDepositFee);
     }
-
 
     /**
      * @notice Start ramping up or down A parameter towards given futureA_ and futureTime_
@@ -1261,32 +1070,17 @@ library SwapUtils {
         uint256 futureA_,
         uint256 futureTime_
     ) external {
-        require(
-            block.timestamp >= self.initialATime.add(1 days),
-            "Wait 1 day before starting ramp"
-        );
-        require(
-            futureTime_ >= block.timestamp.add(MIN_RAMP_TIME),
-            "Insufficient ramp time"
-        );
-        require(
-            futureA_ > 0 && futureA_ < MAX_A,
-            "futureA_ must be > 0 and < MAX_A"
-        );
+        require(block.timestamp >= self.initialATime.add(1 days), "Wait 1 day before starting ramp");
+        require(futureTime_ >= block.timestamp.add(MIN_RAMP_TIME), "Insufficient ramp time");
+        require(futureA_ > 0 && futureA_ < MAX_A, "futureA_ must be > 0 and < MAX_A");
 
         uint256 initialAPrecise = _getAPrecise(self);
         uint256 futureAPrecise = futureA_.mul(A_PRECISION);
 
         if (futureAPrecise < initialAPrecise) {
-            require(
-                futureAPrecise.mul(MAX_A_CHANGE) >= initialAPrecise,
-                "futureA_ is too small"
-            );
+            require(futureAPrecise.mul(MAX_A_CHANGE) >= initialAPrecise, "futureA_ is too small");
         } else {
-            require(
-                futureAPrecise <= initialAPrecise.mul(MAX_A_CHANGE),
-                "futureA_ is too large"
-            );
+            require(futureAPrecise <= initialAPrecise.mul(MAX_A_CHANGE), "futureA_ is too large");
         }
 
         self.initialA = initialAPrecise;
@@ -1294,12 +1088,7 @@ library SwapUtils {
         self.initialATime = block.timestamp;
         self.futureATime = futureTime_;
 
-        emit RampA(
-            initialAPrecise,
-            futureAPrecise,
-            block.timestamp,
-            futureTime_
-        );
+        emit RampA(initialAPrecise, futureAPrecise, block.timestamp, futureTime_);
     }
 
     /**
