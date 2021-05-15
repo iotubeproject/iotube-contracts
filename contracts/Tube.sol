@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./Ledger.sol";
+import "./Lord.sol";
 
 interface IToken {
     function mint(address account, uint256 amount) external;
@@ -32,6 +33,7 @@ contract Tube is Ownable, Pausable {
 
     uint256 public tubeID;
     Ledger public ledger;
+    Lord public lord;
     IERC20 public tubeToken;
     address[] public validators;
     mapping(address => uint256) private validatorIndexes; 
@@ -39,15 +41,20 @@ contract Tube is Ownable, Pausable {
     mapping(uint256 => uint256) public relayerFees;
     mapping(uint256 => uint256) public tubeFees;
 
-    constructor(uint256 _tubeID, Ledger _ledger, IERC20 _tubeToken) public {
+    constructor(uint256 _tubeID, Ledger _ledger, Lord _lord, IERC20 _tubeToken) public {
         tubeID = _tubeID;
         ledger = _ledger;
+        lord = _lord;
         tubeToken = _tubeToken;
     }
 
     function upgrade(address _newTube) public onlyOwner {
-        ledger.transferOwnership(_newTube);
-        // TODO: transfer minter ownership
+        if (ledger.owner() == address(this)) {
+            ledger.transferOwnership(_newTube);
+        }
+        if (lord.owner() == address(this)) {
+            lord.transferOwnership(_newTube);
+        }
     }
 
     function count(uint256 _tubeID, address _token) public view returns (uint256) {
@@ -138,8 +145,7 @@ contract Tube is Ownable, Pausable {
         ledger.record(key);
         address[] memory witnesses = extractWitnesses(key, _signatures);
         require(witnesses.length * 3 > validators.length * 2, "insufficient witnesses");
-        // TODO: mint with minter
-        IToken(_token).mint(_recipient, _amount);
+        lord.mint(_token, _recipient, _amount);
         emit Settled(key, witnesses);
     }
 
@@ -169,8 +175,7 @@ contract Tube is Ownable, Pausable {
         address[] memory witnesses = extractWitnesses(concatKeys(keys), _signatures);
         require(witnesses.length * 3 > validators.length * 2, "insufficient witnesses");
         for (uint256 i = 0; i < _amounts.length; i++) {
-            // TODO: mint with minter
-            IToken(_tokens[i]).mint(_recipients[i], _amounts[i]);
+            lord.mint(_tokens[i], _recipients[i], _amounts[i]);
             emit Settled(keys[i], witnesses);
         }
     }
