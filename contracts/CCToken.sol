@@ -4,10 +4,9 @@ pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract CCToken is ERC20Burnable, Pausable {
+contract CCToken is ERC20Burnable {
     using SafeMath for uint256;
     using SafeERC20 for ERC20;
 
@@ -39,12 +38,12 @@ contract CCToken is ERC20Burnable, Pausable {
         emit MinterSet(_newMinter);
     }
 
-    function deposit(uint256 _amount) public whenNotPaused {
+    function deposit(uint256 _amount) public {
         coToken.safeTransferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount);
     }
 
-    function withdraw(uint256 _amount) public whenNotPaused {
+    function withdraw(uint256 _amount) public {
         require(_amount != 0, "amount is 0");
         _burn(msg.sender, _amount);
         coToken.safeTransfer(msg.sender, _amount);
