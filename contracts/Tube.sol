@@ -15,8 +15,8 @@ interface IToken {
 contract Tube is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
-    event WitnessAdded(address indexed witness);
-    event WitnessRemoved(address indexed witness);
+    event ValidatorAdded(address indexed validator);
+    event ValidatorRemoved(address indexed validator);
     event Settled(bytes32 indexed key, address[] witnesses);
 
     event Receipt(
@@ -33,8 +33,8 @@ contract Tube is Ownable, Pausable {
     uint256 public tubeID;
     Ledger public ledger;
     IERC20 public tubeToken;
-    address[] public witnesses;
-    mapping(address => uint256) private witnessIndexes; 
+    address[] public validators;
+    mapping(address => uint256) private validatorIndexes; 
     mapping(uint256 => mapping(address => uint256)) counts;
     mapping(uint256 => uint256) public relayerFees;
     mapping(uint256 => uint256) public tubeFees;
@@ -63,27 +63,27 @@ contract Tube is Ownable, Pausable {
     }
 
     function numOfWitnesses() public view returns (uint256) {
-        return witnesses.length;
+        return validators.length;
     }
 
-    function addWitness(address _witness) public onlyOwner {
-        if (witnessIndexes[_witness] != 0) {
+    function addValidator(address _validator) public onlyOwner whenPaused {
+        if (validatorIndexes[_validator] != 0) {
             return;
         }
-        witnesses.push(_witness);
-        witnessIndexes[_witness] = witnesses.length;
-        emit WitnessAdded(_witness);
+        validators.push(_validator);
+        validatorIndexes[_validator] = validators.length;
+        emit ValidatorAdded(_validator);
     }
 
-    function removeWitness(address _witness) public onlyOwner {
-        uint256 index = witnessIndexes[_witness];
+    function removeValidator(address _validator) public onlyOwner whenPaused {
+        uint256 index = validatorIndexes[_validator];
         if (index == 0) {
             return;
         }
-        witnesses[index - 1] = witnesses[witnesses.length - 1];
-        witnesses.pop();
-        delete witnessIndexes[_witness];
-        emit WitnessRemoved(_witness);
+        validators[index - 1] = validators[validators.length - 1];
+        validators.pop();
+        delete validatorIndexes[_validator];
+        emit ValidatorRemoved(_validator);
     }
 
     function setFees(uint256 _tubeID, uint256 _tubeFee, uint256 _relayerFee) public onlyOwner {
@@ -119,6 +119,10 @@ contract Tube is Ownable, Pausable {
         return keccak256(abi.encodePacked(_srcTubeID, tubeID, _token, _txIdx, _recipient, _amount));
     }
 
+    function concatKeys(bytes32[] memory keys) public pure returns(bytes32) {
+        return keccak256(abi.encodePacked(keys));
+    }
+
     function withdraw(
         uint256 _srcTubeID, 
         address _token, 
@@ -132,20 +136,56 @@ contract Tube is Ownable, Pausable {
         require(_signatures.length % 65 == 0, "invalid signature length");
         bytes32 key = genKey(_srcTubeID, _token, _txIdx, _recipient, _amount);
         ledger.record(key);
-        uint256 numOfSignatures = _signatures.length / 65;
-        address[] memory ws = new address[](numOfSignatures);
-        for (uint256 i = 0; i < numOfSignatures; i++) {
-            address witness = recover(key, _signatures, i * 65);
-            require(witnessIndexes[witness] != 0, "invalid witness");
-            for (uint256 j = 0; j < i; j++) {
-                require(witness != ws[j], "duplicate witness");
-            }
-            ws[i] = witness;
-        }
-        require(numOfSignatures * 3 > witnesses.length * 2, "insufficient witnesses");
+        address[] memory witnesses = extractWitnesses(key, _signatures);
+        require(witnesses.length * 3 > validators.length * 2, "insufficient witnesses");
         // TODO: mint with minter
         IToken(_token).mint(_recipient, _amount);
-        emit Settled(key, ws);
+        emit Settled(key, witnesses);
+    }
+
+    function withdrawInBatch(
+        uint256[] memory _srcTubeIDs,
+        address[] memory _tokens,
+        uint256[] memory _txIdxs,
+        address[] memory _recipients,
+        uint256[] memory _amounts,
+        bytes memory _signatures
+    ) public whenNotPaused {
+        require(_signatures.length % 65 == 0, "invalid signature length");
+        require(
+            _srcTubeIDs.length == _tokens.length &&
+            _tokens.length == _txIdxs.length &&
+            _txIdxs.length == _recipients.length &&
+            _recipients.length == _amounts.length,
+            "invalid parameters"
+        );
+        bytes32[] memory keys = new bytes32[](_amounts.length);
+        for (uint256 i = 0; i < _amounts.length; i++) {
+            require(_amounts[i] != 0, "amount is 0");
+            require(_recipients[i] != address(0), "invalid recipient");
+            keys[i] = genKey(_srcTubeIDs[i], _tokens[i], _txIdxs[i], _recipients[i], _amounts[i]);
+            ledger.record(keys[i]);
+        }
+        address[] memory witnesses = extractWitnesses(concatKeys(keys), _signatures);
+        require(witnesses.length * 3 > validators.length * 2, "insufficient witnesses");
+        for (uint256 i = 0; i < _amounts.length; i++) {
+            // TODO: mint with minter
+            IToken(_tokens[i]).mint(_recipients[i], _amounts[i]);
+            emit Settled(keys[i], witnesses);
+        }
+    }
+
+    function extractWitnesses(bytes32 _key, bytes memory _signatures) public view returns (address[] memory witnesses_) {
+        uint256 numOfSignatures = _signatures.length / 65;
+        witnesses_ = new address[](numOfSignatures);
+        for (uint256 i = 0; i < numOfSignatures; i++) {
+            address witness = recover(_key, _signatures, i * 65);
+            require(validatorIndexes[witness] != 0, "invalid witness");
+            for (uint256 j = 0; j < i; j++) {
+                require(witness != witnesses_[j], "duplicate witness");
+            }
+            witnesses_[i] = witness;
+        }
     }
 
     function withdrawRelayerFee(address payable _to) external onlyOwner {
