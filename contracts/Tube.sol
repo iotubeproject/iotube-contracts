@@ -10,6 +10,7 @@ import "./Lord.sol";
 
 interface IToken {
     function mint(address account, uint256 amount) external;
+
     function burnFrom(address account, uint256 amount) external;
 }
 
@@ -36,12 +37,17 @@ contract Tube is Ownable, Pausable {
     Lord public lord;
     IERC20 public tubeToken;
     address[] public validators;
-    mapping(address => uint256) private validatorIndexes; 
+    mapping(address => uint256) private validatorIndexes;
     mapping(uint256 => mapping(address => uint256)) counts;
     mapping(uint256 => uint256) public relayerFees;
     mapping(uint256 => uint256) public tubeFees;
 
-    constructor(uint256 _tubeID, Ledger _ledger, Lord _lord, IERC20 _tubeToken) public {
+    constructor(
+        uint256 _tubeID,
+        Ledger _ledger,
+        Lord _lord,
+        IERC20 _tubeToken
+    ) public {
         tubeID = _tubeID;
         ledger = _ledger;
         lord = _lord;
@@ -93,12 +99,21 @@ contract Tube is Ownable, Pausable {
         emit ValidatorRemoved(_validator);
     }
 
-    function setFees(uint256 _tubeID, uint256 _tubeFee, uint256 _relayerFee) public onlyOwner {
+    function setFees(
+        uint256 _tubeID,
+        uint256 _tubeFee,
+        uint256 _relayerFee
+    ) public onlyOwner {
         tubeFees[_tubeID] = _tubeFee;
         relayerFees[_tubeID] = _relayerFee;
     }
 
-    function depositTo(uint256 _tubeID, address _token, address _to, uint256 _amount) public whenNotPaused payable {
+    function depositTo(
+        uint256 _tubeID,
+        address _token,
+        address _to,
+        uint256 _amount
+    ) public payable whenNotPaused {
         require(_to != address(0), "invalid recipient");
         require(_amount > 0, "invalid amount");
         uint256 tubeFee = tubeFees[_tubeID];
@@ -112,7 +127,11 @@ contract Tube is Ownable, Pausable {
         emit Receipt(_tubeID, _token, txIdx, msg.sender, _to, _amount, relayerFee, tubeFee);
     }
 
-    function deposit(uint256 _tubeID, address _token, uint256 _amount) public payable {
+    function deposit(
+        uint256 _tubeID,
+        address _token,
+        uint256 _amount
+    ) public payable {
         depositTo(_tubeID, _token, msg.sender, _amount);
     }
 
@@ -122,20 +141,20 @@ contract Tube is Ownable, Pausable {
         uint256 _txIdx,
         address _recipient,
         uint256 _amount
-    ) public view returns(bytes32) {
+    ) public view returns (bytes32) {
         return keccak256(abi.encodePacked(_srcTubeID, tubeID, _token, _txIdx, _recipient, _amount));
     }
 
-    function concatKeys(bytes32[] memory keys) public pure returns(bytes32) {
+    function concatKeys(bytes32[] memory keys) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(keys));
     }
 
     function withdraw(
-        uint256 _srcTubeID, 
-        address _token, 
-        uint256 _txIdx, 
-        address _recipient, 
-        uint256 _amount, 
+        uint256 _srcTubeID,
+        address _token,
+        uint256 _txIdx,
+        address _recipient,
+        uint256 _amount,
         bytes memory _signatures
     ) public whenNotPaused {
         require(_amount != 0, "amount is 0");
@@ -160,9 +179,9 @@ contract Tube is Ownable, Pausable {
         require(_signatures.length % 65 == 0, "invalid signature length");
         require(
             _srcTubeIDs.length == _tokens.length &&
-            _tokens.length == _txIdxs.length &&
-            _txIdxs.length == _recipients.length &&
-            _recipients.length == _amounts.length,
+                _tokens.length == _txIdxs.length &&
+                _txIdxs.length == _recipients.length &&
+                _recipients.length == _amounts.length,
             "invalid parameters"
         );
         bytes32[] memory keys = new bytes32[](_amounts.length);
@@ -180,7 +199,11 @@ contract Tube is Ownable, Pausable {
         }
     }
 
-    function extractWitnesses(bytes32 _key, bytes memory _signatures) public view returns (address[] memory witnesses_) {
+    function extractWitnesses(bytes32 _key, bytes memory _signatures)
+        public
+        view
+        returns (address[] memory witnesses_)
+    {
         uint256 numOfSignatures = _signatures.length / 65;
         witnesses_ = new address[](numOfSignatures);
         for (uint256 i = 0; i < numOfSignatures; i++) {
@@ -204,16 +227,11 @@ contract Tube is Ownable, Pausable {
         }
     }
 
-    /**
-    * @dev Recover signer address from a message by using their signature
-    * @param hash bytes32 message, the hash is the signed message. What is recovered is the signer address.
-    * @param signature bytes signature, the signature is generated using web3.eth.sign()
-    */
-    function recover(bytes32 hash, bytes memory signature, uint256 offset)
-        internal
-        pure
-        returns (address)
-    {
+    function recover(
+        bytes32 hash,
+        bytes memory signature,
+        uint256 offset
+    ) internal pure returns (address) {
         bytes32 r;
         bytes32 s;
         uint8 v;

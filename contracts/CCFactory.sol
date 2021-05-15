@@ -6,8 +6,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CCToken.sol";
 
 contract CCFactory is Ownable {
-
     address public lord;
+
     constructor(address _lord) {
         lord = _lord;
     }
