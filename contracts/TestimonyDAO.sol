@@ -3,7 +3,7 @@
 pragma solidity 0.7.3;
 
 contract TestimonyDAO {
-    event Testimony(address indexed, bytes32 indexed, bytes);
+    event Testimony(address indexed witness, bytes32 indexed key, bytes testimony);
 
     // mapping(address => mapping(bytes32 => bytes)) public testimonies;
 
