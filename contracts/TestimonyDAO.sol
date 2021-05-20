@@ -3,7 +3,7 @@
 pragma solidity 0.7.3;
 
 contract TestimonyDAO {
-    event Testimony(address indexed witness, bytes32 indexed key, bytes testimony);
+    event Testimony(address indexed validator, bytes32 indexed key, bytes testimony);
 
     // mapping(address => mapping(bytes32 => bytes)) public testimonies;
 
@@ -13,7 +13,7 @@ contract TestimonyDAO {
         emit Testimony(msg.sender, key, value);
     }
 
-    // function getTestimony(address witness, bytes32 key) public view returns (bytes memory) {
+    // function getTestimony(address validator, bytes32 key) public view returns (bytes memory) {
     //     return testimonies[msg.sender][key];
     // }
 }

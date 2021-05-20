@@ -2,9 +2,9 @@
 
 pragma solidity 0.7.3;
 
-contract Register {
+contract Registry {
     struct File {
-        address witness;
+        address validator;
         uint256 genre;
         string uri;
     }

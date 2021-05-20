@@ -19,7 +19,7 @@ contract Tube is Ownable, Pausable {
 
     event ValidatorAdded(address indexed validator);
     event ValidatorRemoved(address indexed validator);
-    event Settled(bytes32 indexed key, address[] witnesses);
+    event Settled(bytes32 indexed key, address[] validators);
 
     event Receipt(
         uint256 indexed tubeID,
@@ -75,7 +75,7 @@ contract Tube is Ownable, Pausable {
         _unpause();
     }
 
-    function numOfWitnesses() public view returns (uint256) {
+    function numOfValidators() public view returns (uint256) {
         return validators.length;
     }
 
@@ -162,10 +162,10 @@ contract Tube is Ownable, Pausable {
         require(_signatures.length % 65 == 0, "invalid signature length");
         bytes32 key = genKey(_srcTubeID, _token, _txIdx, _recipient, _amount);
         ledger.record(key);
-        address[] memory witnesses = extractWitnesses(key, _signatures);
-        require(witnesses.length * 3 > validators.length * 2, "insufficient witnesses");
+        address[] memory validators = extractValidators(key, _signatures);
+        require(validators.length * 3 > validators.length * 2, "insufficient validators");
         lord.mint(_token, _recipient, _amount);
-        emit Settled(key, witnesses);
+        emit Settled(key, validators);
     }
 
     function withdrawInBatch(
@@ -191,28 +191,28 @@ contract Tube is Ownable, Pausable {
             keys[i] = genKey(_srcTubeIDs[i], _tokens[i], _txIdxs[i], _recipients[i], _amounts[i]);
             ledger.record(keys[i]);
         }
-        address[] memory witnesses = extractWitnesses(concatKeys(keys), _signatures);
-        require(witnesses.length * 3 > validators.length * 2, "insufficient witnesses");
+        address[] memory validators = extractValidators(concatKeys(keys), _signatures);
+        require(validators.length * 3 > validators.length * 2, "insufficient validators");
         for (uint256 i = 0; i < _amounts.length; i++) {
             lord.mint(_tokens[i], _recipients[i], _amounts[i]);
-            emit Settled(keys[i], witnesses);
+            emit Settled(keys[i], validators);
         }
     }
 
-    function extractWitnesses(bytes32 _key, bytes memory _signatures)
+    function extractValidators(bytes32 _key, bytes memory _signatures)
         public
         view
-        returns (address[] memory witnesses_)
+        returns (address[] memory validators_)
     {
         uint256 numOfSignatures = _signatures.length / 65;
-        witnesses_ = new address[](numOfSignatures);
+        validators_ = new address[](numOfSignatures);
         for (uint256 i = 0; i < numOfSignatures; i++) {
-            address witness = recover(_key, _signatures, i * 65);
-            require(validatorIndexes[witness] != 0, "invalid witness");
+            address validator = recover(_key, _signatures, i * 65);
+            require(validatorIndexes[validator] != 0, "invalid validator");
             for (uint256 j = 0; j < i; j++) {
-                require(witness != witnesses_[j], "duplicate witness");
+                require(validator != validators_[j], "duplicate validator");
             }
-            witnesses_[i] = witness;
+            validators_[i] = validator;
         }
     }
 
