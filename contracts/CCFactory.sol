@@ -17,7 +17,7 @@ contract CCFactory is Ownable {
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) public returns (CCToken) {
+    ) public onlyOwner returns (CCToken) {
         return new CCToken(_coToken, lord, _name, _symbol, _decimals);
     }
 }

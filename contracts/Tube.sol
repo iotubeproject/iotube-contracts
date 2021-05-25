@@ -162,10 +162,10 @@ contract Tube is Ownable, Pausable {
         require(_signatures.length % 65 == 0, "invalid signature length");
         bytes32 key = genKey(_srcTubeID, _token, _txIdx, _recipient, _amount);
         ledger.record(key);
-        address[] memory validators = extractValidators(key, _signatures);
-        require(validators.length * 3 > validators.length * 2, "insufficient validators");
+        address[] memory signers = extractValidators(key, _signatures);
+        require(signers.length * 3 > validators.length * 2, "insufficient validators");
         lord.mint(_token, _recipient, _amount);
-        emit Settled(key, validators);
+        emit Settled(key, signers);
     }
 
     function withdrawInBatch(
@@ -191,11 +191,11 @@ contract Tube is Ownable, Pausable {
             keys[i] = genKey(_srcTubeIDs[i], _tokens[i], _txIdxs[i], _recipients[i], _amounts[i]);
             ledger.record(keys[i]);
         }
-        address[] memory validators = extractValidators(concatKeys(keys), _signatures);
-        require(validators.length * 3 > validators.length * 2, "insufficient validators");
+        address[] memory signers = extractValidators(concatKeys(keys), _signatures);
+        require(signers.length * 3 > validators.length * 2, "insufficient validators");
         for (uint256 i = 0; i < _amounts.length; i++) {
             lord.mint(_tokens[i], _recipients[i], _amounts[i]);
-            emit Settled(keys[i], validators);
+            emit Settled(keys[i], signers);
         }
     }
 

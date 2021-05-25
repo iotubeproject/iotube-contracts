@@ -2,7 +2,7 @@
 
 pragma solidity 0.7.3;
 
-contract Registry {
+contract ValidatorRegistry {
     struct File {
         address validator;
         uint256 genre;
@@ -14,8 +14,8 @@ contract Registry {
         files[msg.sender] = File(msg.sender, genre, uri);
     }
 
-    function getFile(address witness) public view returns (uint256, string memory) {
-        File storage r = files[witness];
+    function getFile(address _validator) public view returns (uint256, string memory) {
+        File storage r = files[_validator];
         return (r.genre, r.uri);
     }
 }
