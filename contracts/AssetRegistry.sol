@@ -16,7 +16,11 @@ contract AssetRegistry is Ownable {
     mapping(address => Source) public sources;
     mapping(uint256 => mapping(address => address)) public assets;
 
-    function register(uint256 _sourceTubeID, address _sourceAsset, address _asset) public onlyOwner {
+    function register(
+        uint256 _sourceTubeID,
+        address _sourceAsset,
+        address _asset
+    ) public onlyOwner {
         require(assets[_sourceTubeID][_sourceAsset] == address(0), "registered");
         assets[_sourceTubeID][_sourceAsset] = _asset;
         sources[_asset] = Source(_sourceTubeID, _sourceAsset);

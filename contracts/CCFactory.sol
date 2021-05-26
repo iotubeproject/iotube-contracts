@@ -7,7 +7,14 @@ import "./AssetRegistry.sol";
 import "./CCToken.sol";
 
 contract CCFactory is Ownable {
-    event NewCCToken(address indexed _ccToken, address indexed _coToken, address _lord, string _name, string _symbol, uint8 _decimals);
+    event NewCCToken(
+        address indexed _ccToken,
+        address indexed _coToken,
+        address _lord,
+        string _name,
+        string _symbol,
+        uint8 _decimals
+    );
     address public lord;
     AssetRegistry public ar;
 

@@ -38,7 +38,7 @@ contract Tube is Ownable, Pausable {
     IERC20 public tubeToken;
     address[] public validators;
     mapping(address => uint256) private validatorIndexes;
-    mapping(uint256 => mapping(address => uint256)) counts;
+    mapping(uint256 => mapping(address => uint256)) public counts;
     mapping(uint256 => uint256) public relayerFees;
     mapping(uint256 => uint256) public tubeFees;
 
@@ -237,6 +237,8 @@ contract Tube is Ownable, Pausable {
         uint8 v;
 
         // Divide the signature in r, s and v variables with inline assembly.
+
+        // solium-disable-next-line security/no-inline-assembly
         assembly {
             r := mload(add(signature, add(offset, 0x20)))
             s := mload(add(signature, add(offset, 0x40)))
