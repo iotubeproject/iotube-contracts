@@ -28,8 +28,7 @@ contract Tube is Ownable, Pausable {
         address sender,
         address recipient,
         uint256 amount,
-        uint256 relayerFee,
-        uint256 tubeFee
+        uint256 fee
     );
 
     uint256 public tubeID;
@@ -39,8 +38,7 @@ contract Tube is Ownable, Pausable {
     address[] public validators;
     mapping(address => uint256) private validatorIndexes;
     mapping(uint256 => mapping(address => uint256)) public counts;
-    mapping(uint256 => uint256) public relayerFees;
-    mapping(uint256 => uint256) public tubeFees;
+    mapping(uint256 => uint256) public fees;
 
     constructor(
         uint256 _tubeID,
@@ -99,13 +97,11 @@ contract Tube is Ownable, Pausable {
         emit ValidatorRemoved(_validator);
     }
 
-    function setFees(
+    function setFee(
         uint256 _tubeID,
-        uint256 _tubeFee,
-        uint256 _relayerFee
+        uint256 _fee,
     ) public onlyOwner {
-        tubeFees[_tubeID] = _tubeFee;
-        relayerFees[_tubeID] = _relayerFee;
+        fees[_tubeID] = _fee;
     }
 
     function depositTo(
@@ -116,15 +112,13 @@ contract Tube is Ownable, Pausable {
     ) public payable whenNotPaused {
         require(_to != address(0), "invalid recipient");
         require(_amount > 0, "invalid amount");
-        uint256 tubeFee = tubeFees[_tubeID];
-        uint256 relayerFee = relayerFees[_tubeID];
-        require(msg.value >= relayerFee, "insufficient relayer fee");
-        if (tubeFee > 0) {
-            tubeToken.safeTransferFrom(msg.sender, address(this), tubeFee);
+        uint256 fee = fees[_tubeID];
+        if (fee > 0) {
+            tubeToken.safeTransferFrom(msg.sender, address(this), fee);
         }
         IToken(_token).burnFrom(msg.sender, _amount);
         uint256 txIdx = counts[tubeID][_token]++;
-        emit Receipt(_tubeID, _token, txIdx, msg.sender, _to, _amount, relayerFee, tubeFee);
+        emit Receipt(_tubeID, _token, txIdx, msg.sender, _to, _amount, fee);
     }
 
     function deposit(
