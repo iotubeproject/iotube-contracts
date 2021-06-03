@@ -13,7 +13,7 @@ export default {
         enabled: true,
         runs: 10000
       },
-      evmVersion: "istanbul"
+      evmVersion: "petersburg"
     }
   }
 };

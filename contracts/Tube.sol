@@ -15,7 +15,7 @@ interface IToken {
 }
 
 interface IAssetRegistry {
-    function getAsset(uint256 _srcTubeID, address _srcAsset) public view returns (address);
+    function getAsset(uint256 _srcTubeID, address _srcAsset) external view returns (address);
 }
 
 contract Tube is Ownable, Pausable {
@@ -108,7 +108,7 @@ contract Tube is Ownable, Pausable {
 
     function setFee(
         uint256 _tubeID,
-        uint256 _fee,
+        uint256 _fee
     ) public onlyOwner {
         fees[_tubeID] = _fee;
     }
