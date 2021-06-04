@@ -8,7 +8,7 @@ contract Ledger is Ownable {
     mapping(bytes32 => uint256) public records;
 
     function record(bytes32 id) public onlyOwner {
-        require(records[id] != 0, "already in ledger");
+        require(records[id] == 0, "already in ledger");
         records[id] = block.number;
     }
 

@@ -118,9 +118,10 @@ contract Tube is Ownable, Pausable {
         address _token,
         address _to,
         uint256 _amount
-    ) public payable whenNotPaused {
+    ) public whenNotPaused {
         require(_to != address(0), "invalid recipient");
         require(_amount > 0, "invalid amount");
+        require(assetRegistry.getAsset(_tubeID, _token) != address(0), "invalid tubeID and token");
         uint256 fee = fees[_tubeID];
         if (fee > 0) {
             tubeToken.safeTransferFrom(msg.sender, address(this), fee);
@@ -134,7 +135,7 @@ contract Tube is Ownable, Pausable {
         uint256 _tubeID,
         address _token,
         uint256 _amount
-    ) public payable {
+    ) public {
         depositTo(_tubeID, _token, msg.sender, _amount);
     }
 
