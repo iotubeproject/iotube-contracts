@@ -184,7 +184,7 @@ contract Tube is Ownable, Pausable {
     ) public whenNotPaused {
         uint256 cnt = _amounts.length;
         require(cnt > 0, "invalid array length");
-        require(_signatures.length % 65 == 0 && _signatures.length / 65 == cnt, "invalid signature length");
+        require(_signatures.length % 65 == 0, "invalid signature length");
         require(
             _srcTubeIDs.length == cnt &&
                 _srcTokens.length == cnt &&
