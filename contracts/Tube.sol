@@ -106,10 +106,7 @@ contract Tube is Ownable, Pausable {
         emit ValidatorRemoved(_validator);
     }
 
-    function setFee(
-        uint256 _tubeID,
-        uint256 _fee
-    ) public onlyOwner {
+    function setFee(uint256 _tubeID, uint256 _fee) public onlyOwner {
         fees[_tubeID] = _fee;
     }
 
@@ -186,10 +183,7 @@ contract Tube is Ownable, Pausable {
         require(cnt > 0, "invalid array length");
         require(_signatures.length % 65 == 0, "invalid signature length");
         require(
-            _srcTubeIDs.length == cnt &&
-                _srcTokens.length == cnt &&
-                _txIdxs.length == cnt &&
-                _recipients.length == cnt,
+            _srcTubeIDs.length == cnt && _srcTokens.length == cnt && _txIdxs.length == cnt && _recipients.length == cnt,
             "invalid parameters"
         );
 

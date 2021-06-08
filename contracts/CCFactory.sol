@@ -18,7 +18,7 @@ contract CCFactory is Ownable {
     address public lord;
     AssetRegistry public ar;
 
-    constructor(address _lord, AssetRegistry _ar) {
+    constructor(address _lord, AssetRegistry _ar) public {
         lord = _lord;
         ar = _ar;
     }

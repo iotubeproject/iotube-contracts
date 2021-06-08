@@ -4,7 +4,6 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 
 contract MockToken is ERC20Burnable, Ownable {
-
     constructor(
         string memory name_,
         string memory symbol_,
@@ -17,5 +16,4 @@ contract MockToken is ERC20Burnable, Ownable {
         require(amount != 0, "amount == 0");
         _mint(recipient, amount);
     }
-
 }
