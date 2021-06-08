@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 contract AssetRegistry is Ownable {
     event AssetRegistered(uint256 indexed sourceTubeID, address indexed sourceAsset, address indexed asset);
     event AssetDeregistered(uint256 indexed sourceTubeID, address indexed sourceAsset, address indexed asset);
+    event OperatorGranted(address indexed operator);
+    event OperatorRevoked(address indexed operator);
 
     struct Source {
         uint256 tubeID;
@@ -16,18 +18,22 @@ contract AssetRegistry is Ownable {
     mapping(address => Source) public sources;
     mapping(uint256 => mapping(address => address)) public assets;
 
+    mapping(address => bool) public operators;
+
     function register(
         uint256 _sourceTubeID,
         address _sourceAsset,
         address _asset
-    ) public onlyOwner {
+    ) public {
+        require(operators[msg.sender], "no permission");
         require(assets[_sourceTubeID][_sourceAsset] == address(0), "registered");
         assets[_sourceTubeID][_sourceAsset] = _asset;
         sources[_asset] = Source(_sourceTubeID, _sourceAsset);
         emit AssetRegistered(_sourceTubeID, _sourceAsset, _asset);
     }
 
-    function deregister(uint256 _sourceTubeID, address _sourceAsset) public onlyOwner {
+    function deregister(uint256 _sourceTubeID, address _sourceAsset) public {
+        require(operators[msg.sender], "no permission");
         address asset = assets[_sourceTubeID][_sourceAsset];
         require(asset != address(0), "not registered");
         delete sources[assets[_sourceTubeID][_sourceAsset]];
@@ -42,5 +48,19 @@ contract AssetRegistry is Ownable {
 
     function getAsset(uint256 _srcTubeID, address _srcAsset) public view returns (address) {
         return assets[_srcTubeID][_srcAsset];
+    }
+
+    function grant(address _account) public onlyOwner {
+        if (!operators[_account]) {
+            operators[_account] = true;
+            emit OperatorGranted(_account);
+        }
+    }
+
+    function revoke(address _account) public onlyOwner {
+        if (operators[_account]) {
+            operators[_account] = false;
+            emit OperatorRevoked(_account);
+        }
     }
 }

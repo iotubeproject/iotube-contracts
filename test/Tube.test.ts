@@ -69,7 +69,7 @@ describe('tube test', function() {
         factory = await CCFactory.deploy(lord.address, assetRegistry.address);
         await factory.deployed();
 
-        let tx = await assetRegistry.transferOwnership(factory.address);
+        let tx = await assetRegistry.grant(factory.address);
         await tx.wait();
 
         const MockToken = await ethers.getContractFactory("MockToken");

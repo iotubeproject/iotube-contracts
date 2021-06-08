@@ -39,11 +39,13 @@ contract CCToken is ERC20Burnable {
     }
 
     function deposit(uint256 _amount) public {
+        require(address(coToken) != address(0), "no co-token");
         coToken.safeTransferFrom(msg.sender, address(this), _amount);
         _mint(msg.sender, _amount);
     }
 
     function withdraw(uint256 _amount) public {
+        require(address(coToken) != address(0), "no co-token");
         require(_amount != 0, "amount is 0");
         _burn(msg.sender, _amount);
         coToken.safeTransfer(msg.sender, _amount);
