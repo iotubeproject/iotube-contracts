@@ -20,20 +20,23 @@ contract AssetRegistry is Ownable {
 
     mapping(address => bool) public operators;
 
+    modifier onlyOperator() {
+        require(operators[msg.sender], "no permission");
+        _;
+    }
+
     function register(
         uint256 _sourceTubeID,
         address _sourceAsset,
         address _asset
-    ) public {
-        require(operators[msg.sender], "no permission");
+    ) public onlyOperator {
         require(assets[_sourceTubeID][_sourceAsset] == address(0), "registered");
         assets[_sourceTubeID][_sourceAsset] = _asset;
         sources[_asset] = Source(_sourceTubeID, _sourceAsset);
         emit AssetRegistered(_sourceTubeID, _sourceAsset, _asset);
     }
 
-    function deregister(uint256 _sourceTubeID, address _sourceAsset) public {
-        require(operators[msg.sender], "no permission");
+    function deregister(uint256 _sourceTubeID, address _sourceAsset) public onlyOperator {
         address asset = assets[_sourceTubeID][_sourceAsset];
         require(asset != address(0), "not registered");
         delete sources[assets[_sourceTubeID][_sourceAsset]];
