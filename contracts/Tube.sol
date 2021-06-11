@@ -80,11 +80,20 @@ contract Tube is Ownable, Pausable {
         _unpause();
     }
 
-    function numOfValidators() public view returns (uint256) {
-        return validators.length;
+    function getValidators(uint256 offset, uint8 limit) public view returns (uint256 count_, address[] memory validators_) {
+        require(offset < validators.length && limit != 0, "invalid parameters");
+        count_ = validators.length;
+        validators_ = new address[](limit);
+        for (uint256 i = 0; i < limit; i++) {
+            if (offset + i >= validators.length) {
+                break;
+            }
+            validators_[i] = validators[offset + i];
+        }
     }
 
     function addValidator(address _validator) public onlyOwner whenPaused {
+        require(_validator != address(0), "invalid validator");
         if (validatorIndexes[_validator] != 0) {
             return;
         }
