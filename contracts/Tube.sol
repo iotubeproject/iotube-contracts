@@ -81,7 +81,6 @@ contract Tube is Ownable, Pausable {
     }
 
     function getValidators(uint256 offset, uint8 limit) public view returns (uint256 count_, address[] memory validators_) {
-        require(offset < validators.length && limit != 0, "invalid parameters");
         count_ = validators.length;
         validators_ = new address[](limit);
         for (uint256 i = 0; i < limit; i++) {
@@ -156,6 +155,10 @@ contract Tube is Ownable, Pausable {
 
     function concatKeys(bytes32[] memory keys) public pure returns (bytes32) {
         return keccak256(abi.encodePacked(keys));
+    }
+
+    function isSettled(bytes32 key) public view returns (bool) {
+        return ledger.get(key) != 0;
     }
 
     function withdraw(

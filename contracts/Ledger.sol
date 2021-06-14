@@ -12,7 +12,7 @@ contract Ledger is Ownable {
         records[id] = block.number;
     }
 
-    function contains(bytes32 id) public view returns (uint256) {
+    function get(bytes32 id) public view returns (uint256) {
         return records[id];
     }
 }

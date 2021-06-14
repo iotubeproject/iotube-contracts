@@ -112,13 +112,15 @@ describe("tube uint test", function () {
       .to.emit(tube, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[0])
 
-    expect(await tube.numOfValidators()).to.equal(1)
+    let ret = await tube.getValidators(0, 1);
+    expect(ret.count_).to.equal(1)
 
     await expect(tube.removeValidator(VALIDATOR_ADDRESSES[0]))
       .to.emit(tube, "ValidatorRemoved")
       .withArgs(VALIDATOR_ADDRESSES[0])
 
-    expect(await tube.numOfValidators()).to.equal(0)
+    ret = await tube.getValidators(0, 1);
+    expect(ret.count_).to.equal(0)
 
     await tube.unpause()
   })
