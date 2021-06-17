@@ -23,7 +23,7 @@ contract Tube is Ownable, Pausable {
 
     event ValidatorAdded(address indexed validator);
     event ValidatorRemoved(address indexed validator);
-    event Settled(bytes32 indexed key, address[] validators);
+    event Settled(bytes32 indexed key, address[] validators, bool success);
 
     event Receipt(
         uint256 indexed tubeID,
@@ -32,6 +32,7 @@ contract Tube is Ownable, Pausable {
         address sender,
         address recipient,
         uint256 amount,
+        bytes data,
         uint256 fee
     );
 
@@ -122,7 +123,8 @@ contract Tube is Ownable, Pausable {
         uint256 _tubeID,
         address _token,
         address _to,
-        uint256 _amount
+        uint256 _amount,
+        bytes memory _data
     ) public whenNotPaused {
         require(_to != address(0), "invalid recipient");
         require(_amount > 0, "invalid amount");
@@ -132,15 +134,16 @@ contract Tube is Ownable, Pausable {
         }
         IToken(_token).burnFrom(msg.sender, _amount);
         uint256 txIdx = counts[_tubeID][_token]++;
-        emit Receipt(_tubeID, _token, txIdx, msg.sender, _to, _amount, fee);
+        emit Receipt(_tubeID, _token, txIdx, msg.sender, _to, _amount, _data, fee);
     }
 
     function deposit(
         uint256 _tubeID,
         address _token,
-        uint256 _amount
+        uint256 _amount,
+        bytes memory _data
     ) public {
-        depositTo(_tubeID, _token, msg.sender, _amount);
+        depositTo(_tubeID, _token, msg.sender, _amount, _data);
     }
 
     function genKey(
@@ -148,9 +151,10 @@ contract Tube is Ownable, Pausable {
         address _token,
         uint256 _txIdx,
         address _recipient,
-        uint256 _amount
+        uint256 _amount,
+        bytes memory _data
     ) public view returns (bytes32) {
-        return keccak256(abi.encodePacked(_srcTubeID, tubeID, _token, _txIdx, _recipient, _amount));
+        return keccak256(abi.encodePacked(_srcTubeID, tubeID, _token, _txIdx, _recipient, _amount, _data));
     }
 
     function concatKeys(bytes32[] memory keys) public pure returns (bytes32) {
@@ -167,6 +171,7 @@ contract Tube is Ownable, Pausable {
         uint256 _txIdx,
         address _recipient,
         uint256 _amount,
+        bytes memory _data,
         bytes memory _signatures
     ) public whenNotPaused {
         require(_amount != 0, "amount is 0");
@@ -174,12 +179,22 @@ contract Tube is Ownable, Pausable {
         require(_signatures.length % 65 == 0, "invalid signature length");
         address dstToken = assetRegistry.getAsset(_srcTubeID, _srcToken);
         require(dstToken != address(0), "invalid tubeId and token");
-        bytes32 key = genKey(_srcTubeID, _srcToken, _txIdx, _recipient, _amount);
+        bytes32 key = genKey(_srcTubeID, _srcToken, _txIdx, _recipient, _amount, _data);
         ledger.record(key);
         address[] memory signers = extractValidators(key, _signatures);
         require(signers.length * 3 > validators.length * 2, "insufficient validators");
-        lord.mint(dstToken, _recipient, _amount);
-        emit Settled(key, signers);
+        bool success = true;
+        if (_data.length > 0) {
+            lord.mint(dstToken, address(this), _amount);
+            IERC20(dstToken).safeApprove(_recipient, _amount);
+            (success, ) = _recipient.call(_data);
+            if (!success) {
+                IERC20(dstToken).safeDecreaseAllowance(_recipient, _amount);
+            }
+        } else {
+            lord.mint(dstToken, _recipient, _amount);
+        }
+        emit Settled(key, signers, success);
     }
 
     function withdrawInBatch(
@@ -207,14 +222,14 @@ contract Tube is Ownable, Pausable {
         for (uint256 i = 0; i < cnt; i++) {
             require(_amounts[i] != 0, "amount is 0");
             require(_recipients[i] != address(0), "invalid recipient");
-            keys[i] = genKey(_srcTubeIDs[i], _srcTokens[i], _txIdxs[i], _recipients[i], _amounts[i]);
+            keys[i] = genKey(_srcTubeIDs[i], _srcTokens[i], _txIdxs[i], _recipients[i], _amounts[i], "");
             ledger.record(keys[i]);
         }
         address[] memory signers = extractValidators(concatKeys(keys), _signatures);
         require(signers.length * 3 > validators.length * 2, "insufficient validators");
         for (uint256 i = 0; i < cnt; i++) {
             lord.mint(dstTokens[i], _recipients[i], _amounts[i]);
-            emit Settled(keys[i], signers);
+            emit Settled(keys[i], signers, true);
         }
     }
 
