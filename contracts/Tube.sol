@@ -81,7 +81,11 @@ contract Tube is Ownable, Pausable {
         _unpause();
     }
 
-    function getValidators(uint256 offset, uint8 limit) public view returns (uint256 count_, address[] memory validators_) {
+    function getValidators(uint256 offset, uint8 limit)
+        public
+        view
+        returns (uint256 count_, address[] memory validators_)
+    {
         count_ = validators.length;
         validators_ = new address[](limit);
         for (uint256 i = 0; i < limit; i++) {
