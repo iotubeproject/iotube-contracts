@@ -47,7 +47,7 @@ describe("tube uint test", function () {
   let attacker: SignerWithAddress
 
   beforeEach(async function () {
-    ;[owner, holder1, holder2, holder3, attacker] = await ethers.getSigners()
+    [owner, holder1, holder2, holder3, attacker] = await ethers.getSigners()
 
     const Lord = await ethers.getContractFactory("Lord")
     lord = await Lord.deploy()
@@ -62,13 +62,10 @@ describe("tube uint test", function () {
     await assetRegistry.deployed()
 
     const CCFactory = await ethers.getContractFactory("CCFactory")
-    factory = await CCFactory.deploy(lord.address, assetRegistry.address)
+    factory = await CCFactory.deploy(lord.address)
     await factory.deployed()
 
-    let tx = await assetRegistry.grant(factory.address)
-    await tx.wait()
-
-    tx = await assetRegistry.grant(owner.address)
+    let tx = await assetRegistry.grant(owner.address)
     await tx.wait()
 
     const MockToken = await ethers.getContractFactory("MockToken")
@@ -76,7 +73,7 @@ describe("tube uint test", function () {
     await tubeToken.deployed()
 
     const Tube = await ethers.getContractFactory("Tube")
-    tube = await Tube.deploy(CHAIN_ID, ledger.address, lord.address, tubeToken.address, assetRegistry.address)
+    tube = await Tube.deploy(CHAIN_ID, ledger.address, lord.address, tubeToken.address)
     await tube.deployed()
 
     tx = await lord.transferOwnership(tube.address)
@@ -94,14 +91,17 @@ describe("tube uint test", function () {
     let CCToken = await ethers.getContractFactory("CCToken")
     localToken = CCToken.attach(event.args[0])
 
-    ret = await factory.createForeignToken(CHAIN_ID, localToken.address, "name", "symbol", 6)
+    ret = await factory.createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
     event = _.find(receipt.events, (e: any) => e.event == "NewCCToken")
     CCToken = await ethers.getContractFactory("CCToken")
     foreignToken = CCToken.attach(event.args[0])
 
-    tx = await assetRegistry.register(FOREIGN_CHAIN_ID, foreignToken.address, localToken.address)
-    await tx.wait()
+    tx = await assetRegistry.addOriginalAsset(FOREIGN_CHAIN_ID, foreignToken.address);
+    let retval = await tx.wait()
+    const assetID = await assetRegistry.assetID(FOREIGN_CHAIN_ID, foreignToken.address);
+    tx = await assetRegistry.addAssetOnTube(assetID, CHAIN_ID, localToken.address);
+    await tx.wait();
   })
 
   it("Validator", async function () {
@@ -163,7 +163,7 @@ describe("tube uint test", function () {
 
       await expect(tube.deposit(CHAIN_ID, localToken.address, 300000, "0x"))
         .to.emit(tube, "Receipt")
-        .withArgs(CHAIN_ID, localToken.address, 0, owner.address, owner.address, 300000, "0x", 0)
+        .withArgs(CHAIN_ID, localToken.address, 1, owner.address, owner.address, 300000, "0x", 0)
 
       expect(await localToken.balanceOf(owner.address)).to.equal(700000)
     })
@@ -197,7 +197,7 @@ describe("tube uint test", function () {
 
       await expect(tube.deposit(CHAIN_ID, localToken.address, 300000, "0x"))
         .to.emit(tube, "Receipt")
-        .withArgs(CHAIN_ID, localToken.address, 0, owner.address, owner.address, 300000, "0x", 1000000)
+        .withArgs(CHAIN_ID, localToken.address, 1, owner.address, owner.address, 300000, "0x", 1000000)
 
       expect(await tubeToken.balanceOf(owner.address)).to.equal(2000000)
       expect(await localToken.balanceOf(owner.address)).to.equal(700000)
@@ -224,65 +224,59 @@ describe("tube uint test", function () {
 
     it("amount is 0", async function () {
       await expect(
-        tube.withdraw(CHAIN_ID, localToken.address, 0, holder1.address, 0, "0x", ZERO_THREE_SIGNATURES),
+        tube.withdraw(CHAIN_ID, 1, localToken.address,  holder1.address, 0, "0x", ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("amount is 0")
     })
 
     it("invalid recipient", async function () {
       await expect(
-        tube.withdraw(CHAIN_ID, localToken.address, 0, ZERO_ADDRESS, 1000, "0x", ZERO_THREE_SIGNATURES),
+        tube.withdraw(CHAIN_ID, 1, localToken.address, ZERO_ADDRESS, 1000, "0x", ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("invalid recipient")
     })
 
     it("invalid signature length", async function () {
-      await expect(tube.withdraw(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x", 0x00)).to.be.revertedWith(
+      await expect(tube.withdraw(CHAIN_ID, 1, localToken.address, holder1.address, 1000, "0x", 0x00)).to.be.revertedWith(
         "invalid signature length",
       )
     })
 
-    it("invalid tubeId and token", async function () {
-      await expect(
-        tube.withdraw(CHAIN_ID, holder3.address, 0, holder1.address, 1000, "0x", ZERO_THREE_SIGNATURES),
-      ).to.be.revertedWith("invalid tubeId and token")
-    })
-
     it("invalid validator", async function () {
       await expect(
-        tube.withdraw(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x", ZERO_THREE_SIGNATURES),
+        tube.withdraw(CHAIN_ID, 1, localToken.address, holder1.address, 1000, "0x", ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("invalid validator")
     })
 
     it("duplicate validators", async function () {
-      const key = await tube.genKey(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x")
+      const key = await tube.genKey(CHAIN_ID, 1, localToken.address, holder1.address, 1000, "0x")
 
       const s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
       const signature = "0x" + s1 + s1
 
-      await expect(tube.withdraw(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x", signature)).to.be.revertedWith(
+      await expect(tube.withdraw(CHAIN_ID, 1, localToken.address, holder1.address, 1000, "0x", signature)).to.be.revertedWith(
         "duplicate validator",
       )
     })
 
     it("insufficient validators", async function () {
-      const key = await tube.genKey(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x")
+      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, holder1.address, 1000, "0x")
 
       const s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
       const signature = "0x" + s1
 
-      await expect(tube.withdraw(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x", signature)).to.be.revertedWith(
+      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, holder1.address, 1000, "0x", signature)).to.be.revertedWith(
         "insufficient validators",
       )
     })
 
     it("success", async function () {
-      const key = await tube.genKey(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x")
+      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, holder1.address, 1000, "0x")
 
       const s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
       const s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
       const s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
       const signature = "0x" + s1 + s2 + s3
 
-      await expect(tube.withdraw(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x", signature))
+      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, holder1.address, 1000, "0x", signature))
         .to.emit(tube, "Settled")
         .withArgs(key, VALIDATOR_ADDRESSES, true)
 
@@ -316,14 +310,14 @@ describe("tube uint test", function () {
     it("fail", async function () {
       const amount = 999;
       const bytecode = "0x8340f549" + foreignToken.address.substring(2).padStart(64, "0") + holder1.address.substring(2).padStart(64, "0") + amount.toString(16).padStart(64, "0")
-      const key = await tube.genKey(CHAIN_ID, localToken.address, 0, safe.address, amount, bytecode)
+      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode)
 
       const s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
       const s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
       const s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
       const signature = "0x" + s1 + s2 + s3
 
-      await expect(tube.withdraw(CHAIN_ID, localToken.address, 0, safe.address, amount, bytecode, signature))
+      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode, signature))
         .to.emit(tube, "Settled")
         .withArgs(key, VALIDATOR_ADDRESSES, false)
 
@@ -334,14 +328,14 @@ describe("tube uint test", function () {
     it("success", async function () {
       const amount = 1000;
       const bytecode = "0x8340f549" + foreignToken.address.substring(2).padStart(64, "0") + holder1.address.substring(2).padStart(64, "0") + amount.toString(16).padStart(64, "0")
-      const key = await tube.genKey(CHAIN_ID, localToken.address, 0, safe.address, amount, bytecode)
+      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode)
 
       const s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
       const s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
       const s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
       const signature = "0x" + s1 + s2 + s3
 
-      await expect(tube.withdraw(CHAIN_ID, localToken.address, 0, safe.address, amount, bytecode, signature))
+      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode, signature))
         .to.emit(tube, "Settled")
         .withArgs(key, VALIDATOR_ADDRESSES, true)
 
@@ -376,44 +370,38 @@ describe("tube uint test", function () {
 
     it("invalid signature length", async function () {
       await expect(
-        tube.withdrawInBatch([CHAIN_ID], [localToken.address], [0], [holder1.address], [100], "0x00"),
+        tube.withdrawInBatch([CHAIN_ID], [1], [foreignToken.address], [holder1.address], [100], "0x00"),
       ).to.be.revertedWith("invalid signature length")
     })
 
     it("invalid parameters", async function () {
       await expect(
-        tube.withdrawInBatch([CHAIN_ID], [localToken.address], [], [holder1.address], [100], ZERO_THREE_SIGNATURES),
+        tube.withdrawInBatch([CHAIN_ID], [], [foreignToken.address], [holder1.address], [100], ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("invalid parameters")
-    })
-
-    it("invalid tubeId and token", async function () {
-      await expect(
-        tube.withdrawInBatch([CHAIN_ID], [holder1.address], [0], [holder1.address], [100], ZERO_THREE_SIGNATURES),
-      ).to.be.revertedWith("invalid tubeId and token")
     })
 
     it("amount is 0", async function () {
       await expect(
-        tube.withdrawInBatch([CHAIN_ID], [localToken.address], [0], [holder1.address], [0], ZERO_THREE_SIGNATURES),
+        tube.withdrawInBatch([CHAIN_ID], [1], [foreignToken.address], [holder1.address], [0], ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("amount is 0")
     })
 
     it("invalid recipient", async function () {
       await expect(
-        tube.withdrawInBatch([CHAIN_ID], [localToken.address], [0], [ZERO_ADDRESS], [100], ZERO_THREE_SIGNATURES),
+        tube.withdrawInBatch([CHAIN_ID], [1], [foreignToken.address], [ZERO_ADDRESS], [100], ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("invalid recipient")
     })
 
     it("invalid validator", async function () {
       await expect(
-        tube.withdrawInBatch([CHAIN_ID], [localToken.address], [0], [holder1.address], [100], ZERO_THREE_SIGNATURES),
+        tube.withdrawInBatch([CHAIN_ID],[1], [foreignToken.address], [holder1.address], [100], ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("invalid validator")
     })
 
     it("insufficient validators", async function () {
-      const key1 = await tube.genKey(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x")
+      const key1 = await tube.genKey(CHAIN_ID, 1, foreignToken.address, holder1.address, 1000, "0x")
 
-      const key2 = await tube.genKey(CHAIN_ID, localToken.address, 0, holder2.address, 200, "0x")
+      const key2 = await tube.genKey(CHAIN_ID, 2, foreignToken.address, holder2.address, 200, "0x")
 
       const key = await tube.concatKeys([key1, key2])
 
@@ -423,8 +411,8 @@ describe("tube uint test", function () {
       await expect(
         tube.withdrawInBatch(
           [CHAIN_ID, CHAIN_ID],
-          [localToken.address, localToken.address],
-          [0, 0],
+          [1, 2],
+          [foreignToken.address, foreignToken.address],
           [holder1.address, holder2.address],
           [1000, 200],
           signature,
@@ -433,9 +421,9 @@ describe("tube uint test", function () {
     })
 
     it("duplicate validator", async function () {
-      const key1 = await tube.genKey(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x")
+      const key1 = await tube.genKey(CHAIN_ID, 1, foreignToken.address, holder1.address, 1000, "0x")
 
-      const key2 = await tube.genKey(CHAIN_ID, localToken.address, 0, holder2.address, 200, "0x")
+      const key2 = await tube.genKey(CHAIN_ID, 2, foreignToken.address, holder2.address, 200, "0x")
 
       const key = await tube.concatKeys([key1, key2])
 
@@ -445,8 +433,8 @@ describe("tube uint test", function () {
       await expect(
         tube.withdrawInBatch(
           [CHAIN_ID, CHAIN_ID],
-          [localToken.address, localToken.address],
-          [0, 0],
+          [1, 2],
+          [foreignToken.address, foreignToken.address],
           [holder1.address, holder2.address],
           [1000, 200],
           signature,
@@ -455,9 +443,9 @@ describe("tube uint test", function () {
     })
 
     it("success", async function () {
-      const key1 = await tube.genKey(CHAIN_ID, localToken.address, 0, holder1.address, 1000, "0x")
+      const key1 = await tube.genKey(CHAIN_ID, 1, foreignToken.address, holder1.address, 1000, "0x")
 
-      const key2 = await tube.genKey(CHAIN_ID, localToken.address, 0, holder2.address, 200, "0x")
+      const key2 = await tube.genKey(CHAIN_ID, 2, foreignToken.address, holder2.address, 200, "0x")
 
       const key = await tube.concatKeys([key1, key2])
 
@@ -469,8 +457,8 @@ describe("tube uint test", function () {
       await expect(
         tube.withdrawInBatch(
           [CHAIN_ID, CHAIN_ID],
-          [localToken.address, localToken.address],
-          [0, 0],
+          [1, 2],
+          [foreignToken.address, foreignToken.address],
           [holder1.address, holder2.address],
           [1000, 200],
           signature,
@@ -514,7 +502,7 @@ describe("tube integrate test", function () {
   let attacker: SignerWithAddress
 
   beforeEach(async function () {
-    ;[ownerA, ownerB, holder1, holder2, holder3, attacker] = await ethers.getSigners()
+    [ownerA, ownerB, holder1, holder2, holder3, attacker] = await ethers.getSigners()
 
     const Lord = await ethers.getContractFactory("Lord")
     lordA = await Lord.connect(ownerA).deploy()
@@ -531,23 +519,14 @@ describe("tube integrate test", function () {
     const AssetRegistry = await ethers.getContractFactory("AssetRegistry")
     assetRegistryA = await AssetRegistry.connect(ownerA).deploy()
     await assetRegistryA.deployed()
-    assetRegistryB = await AssetRegistry.connect(ownerB).deploy()
-    await assetRegistryB.deployed()
 
     const CCFactory = await ethers.getContractFactory("CCFactory")
-    factoryA = await CCFactory.connect(ownerA).deploy(lordA.address, assetRegistryA.address)
+    factoryA = await CCFactory.connect(ownerA).deploy(lordA.address)
     await factoryA.deployed()
-    factoryB = await CCFactory.connect(ownerB).deploy(lordB.address, assetRegistryB.address)
+    factoryB = await CCFactory.connect(ownerB).deploy(lordB.address)
     await factoryB.deployed()
 
-    let tx = await assetRegistryA.connect(ownerA).grant(factoryA.address)
-    await tx.wait()
-    tx = await assetRegistryB.connect(ownerB).grant(factoryB.address)
-    await tx.wait()
-
-    tx = await assetRegistryA.connect(ownerA).grant(ownerA.address)
-    await tx.wait()
-    tx = await assetRegistryB.connect(ownerB).grant(ownerB.address)
+    let tx = await assetRegistryA.connect(ownerA).grant(ownerA.address)
     await tx.wait()
 
     const MockToken = await ethers.getContractFactory("MockToken")
@@ -562,7 +541,6 @@ describe("tube integrate test", function () {
       ledgerA.address,
       lordA.address,
       tubeTokenA.address,
-      assetRegistryA.address,
     )
     await tubeA.deployed()
     tubeB = await Tube.connect(ownerB).deploy(
@@ -570,7 +548,6 @@ describe("tube integrate test", function () {
       ledgerB.address,
       lordB.address,
       tubeTokenB.address,
-      assetRegistryB.address,
     )
     await tubeB.deployed()
 
@@ -593,14 +570,16 @@ describe("tube integrate test", function () {
     let CCToken = await ethers.getContractFactory("CCToken")
     ccTokenA = CCToken.attach(event.args[0])
 
-    ret = await factoryB.connect(ownerB).createForeignToken(CHAIN_ID_A, ccTokenA.address, "name", "symbol", 6)
+    ret = await factoryB.connect(ownerB).createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
     event = _.find(receipt.events, (e: any) => e.event == "NewCCToken")
     CCToken = await ethers.getContractFactory("CCToken")
     ccTokenB = CCToken.attach(event.args[0])
 
-    tx = await assetRegistryA.connect(ownerA).register(CHAIN_ID_B, ccTokenB.address, ccTokenA.address)
+    tx = await assetRegistryA.connect(ownerA).addOriginalAsset(CHAIN_ID_A, ccTokenA.address)
     await tx.wait()
+    const assetID = await assetRegistryA.assetID(CHAIN_ID_A, ccTokenA.address);
+    await assetRegistryA.addAssetOnTube(assetID, CHAIN_ID_B, ccTokenB.address)
   })
 
   it("transfer", async function () {
@@ -623,7 +602,7 @@ describe("tube integrate test", function () {
 
     await expect(tubeA.connect(holder1).deposit(CHAIN_ID_A, ccTokenA.address, amount, "0x"))
       .to.emit(tubeA, "Receipt")
-      .withArgs(CHAIN_ID_A, ccTokenA.address, 0, holder1.address, holder1.address, amount, "0x", 0)
+      .withArgs(CHAIN_ID_A, ccTokenA.address, 1, holder1.address, holder1.address, amount, "0x", 0)
 
     await tubeB.pause()
     await expect(tubeB.addValidator(VALIDATOR_ADDRESSES[0]))
@@ -640,14 +619,14 @@ describe("tube integrate test", function () {
 
     await tubeB.unpause()
 
-    let key = await tubeB.genKey(CHAIN_ID_A, ccTokenA.address, 0, holder1.address, amount, "0x")
+    let key = await tubeB.genKey(CHAIN_ID_A, 1, ccTokenB.address, holder1.address, amount, "0x")
 
     let s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
     let s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
     let s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
     let signature = "0x" + s1 + s2 + s3
 
-    await expect(tubeB.connect(holder1).withdraw(CHAIN_ID_A, ccTokenA.address, 0, holder1.address, amount, "0x", signature))
+    await expect(tubeB.connect(holder1).withdraw(CHAIN_ID_A, 1, ccTokenB.address, holder1.address, amount, "0x", signature))
       .to.emit(tubeB, "Settled")
       .withArgs(key, VALIDATOR_ADDRESSES, true)
 
@@ -659,7 +638,7 @@ describe("tube integrate test", function () {
 
     await expect(tubeB.connect(holder1).deposit(CHAIN_ID_B, ccTokenB.address, amount, "0x"))
       .to.emit(tubeB, "Receipt")
-      .withArgs(CHAIN_ID_B, ccTokenB.address, 0, holder1.address, holder1.address, amount, "0x", 0)
+      .withArgs(CHAIN_ID_B, ccTokenB.address, 1, holder1.address, holder1.address, amount, "0x", 0)
 
     await tubeA.pause()
     await expect(tubeA.addValidator(VALIDATOR_ADDRESSES[0]))
@@ -676,14 +655,14 @@ describe("tube integrate test", function () {
 
     await tubeA.unpause()
 
-    key = await tubeA.genKey(CHAIN_ID_B, ccTokenB.address, 0, holder1.address, amount, "0x")
+    key = await tubeA.genKey(CHAIN_ID_B, 1, ccTokenA.address, holder1.address, amount, "0x")
 
     s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
     s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
     s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
     signature = "0x" + s1 + s2 + s3
 
-    await expect(tubeA.connect(holder1).withdraw(CHAIN_ID_B, ccTokenB.address, 0, holder1.address, amount, "0x", signature))
+    await expect(tubeA.connect(holder1).withdraw(CHAIN_ID_B, 1, ccTokenA.address, holder1.address, amount, "0x", signature))
       .to.emit(tubeA, "Settled")
       .withArgs(key, VALIDATOR_ADDRESSES, true)
 

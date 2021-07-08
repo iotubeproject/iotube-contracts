@@ -1,22 +1,34 @@
 // SPDX-License-Identifier: MIT
-
+pragma experimental ABIEncoderV2;
 pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AssetRegistry is Ownable {
-    event AssetRegistered(uint256 indexed sourceTubeID, address indexed sourceAsset, address indexed asset);
-    event AssetDeregistered(uint256 indexed sourceTubeID, address indexed sourceAsset, address indexed asset);
+    event NewOriginalAsset(uint256 indexed tubeID, address indexed asset, uint256 indexed id);
+    event AssetAddedOnTube(uint256 indexed id, uint256 indexed tubeID, address asset);
+    event AssetActivated(uint256 indexed id, uint256 indexed tubID);
+    event AssetDeactivated(uint256 indexed id, uint256 indexed tubeID);
+    event TubeActivated(uint256 indexed tubID);
+    event TubeDeactivated(uint256 indexed tubeID);
     event OperatorGranted(address indexed operator);
     event OperatorRevoked(address indexed operator);
 
-    struct Source {
+    struct Asset {
         uint256 tubeID;
         address asset;
+        bool active;
     }
 
-    mapping(address => Source) public sources;
-    mapping(uint256 => mapping(address => address)) public assets;
+    Asset[] private originalAssets;
+    // tubeID + asset => assetID
+    mapping(uint256 => mapping(address => uint256)) private originalAssetIDs;
+    // assetID + shadow tubeID => shadow asset
+    mapping(uint256 => mapping(uint256 => Asset)) private shadowAssets;
+    // shadow tubeID + shadow asset => assetID
+    mapping(uint256 => mapping(address => uint256)) private shadowAssetIDs;
+    // tubes which are banned
+    mapping(uint256 => bool) public bannedTubeIDs;
 
     mapping(address => bool) public operators;
 
@@ -25,32 +37,98 @@ contract AssetRegistry is Ownable {
         _;
     }
 
-    function register(
-        uint256 _sourceTubeID,
-        address _sourceAsset,
-        address _asset
-    ) public onlyOperator {
-        require(assets[_sourceTubeID][_sourceAsset] == address(0), "registered");
-        assets[_sourceTubeID][_sourceAsset] = _asset;
-        sources[_asset] = Source(_sourceTubeID, _sourceAsset);
-        emit AssetRegistered(_sourceTubeID, _sourceAsset, _asset);
+    // assetID returns the asset id of given tube id and asset address
+    function assetID(uint256 _tubeID, address _asset) public view returns (uint256) {
+        uint256 id = originalAssetIDs[_tubeID][_asset];
+        if (id == 0) {
+            id = shadowAssetIDs[_tubeID][_asset];
+        }
+        return id;
     }
 
-    function deregister(uint256 _sourceTubeID, address _sourceAsset) public onlyOperator {
-        address asset = assets[_sourceTubeID][_sourceAsset];
-        require(asset != address(0), "not registered");
-        delete sources[assets[_sourceTubeID][_sourceAsset]];
-        assets[_sourceTubeID][_sourceAsset] = address(0);
-        emit AssetDeregistered(_sourceTubeID, _sourceAsset, asset);
+    function originalAssetByID(uint256 _assetID) public view returns (Asset memory) {
+        require(_assetID > 0 && _assetID <= originalAssets.length, "invalid asset id");
+        return originalAssets[_assetID - 1];
     }
 
-    function getSource(address _asset) public view returns (uint256, address) {
-        Source storage src = sources[_asset];
-        return (src.tubeID, src.asset);
+    function numOfAssets() public view returns (uint256) {
+        return originalAssets.length;
     }
 
-    function getAsset(uint256 _srcTubeID, address _srcAsset) public view returns (address) {
-        return assets[_srcTubeID][_srcAsset];
+    function assetOnTube(uint256 _assetID, uint256 _tubeID) public view returns (Asset memory) {
+        Asset memory originalAsset = originalAssetByID(_assetID);
+        if (originalAsset.tubeID == _tubeID) {
+            return originalAsset;
+        }
+        return shadowAssets[_assetID][_tubeID];
+    }
+
+    function addOriginalAsset(uint256 _tubeID, address _asset) public onlyOperator returns (uint256) {
+        require(_tubeID > 0 && _asset != address(0), "invalid parameter");
+        uint256 id = assetID(_tubeID, _asset);
+        if (id == 0) {
+            originalAssets.push(Asset(_tubeID, _asset, true));
+            id = originalAssets.length;
+            originalAssetIDs[_tubeID][_asset] = id;
+            emit NewOriginalAsset(_tubeID, _asset, id);
+        }
+        return id;
+    }
+
+    function addAssetOnTube(uint256 _assetID, uint256 _tubeID, address _asset) public onlyOperator {
+        require(_tubeID > 0 && _asset != address(0) && _assetID > 0 && _assetID <= originalAssets.length, "invalid parameter");
+        require(shadowAssets[_assetID][_tubeID].asset == address(0), "invalid asset");
+        shadowAssets[_assetID][_tubeID] = Asset(_tubeID, _asset, true);
+        shadowAssetIDs[_tubeID][_asset] = _assetID;
+        emit AssetAddedOnTube(_assetID, _tubeID, _asset);
+    }
+
+    function activateAsset(uint256 _assetID, uint256 _tubeID) public onlyOperator {
+        require(_assetID > 0 && _assetID <= originalAssets.length, "invalid asset id");
+        Asset storage oa = originalAssets[_assetID];
+        if (_tubeID == 0 || oa.tubeID == _tubeID) {
+            if (oa.active == false) {
+                oa.active = true;
+                emit AssetActivated(_assetID, oa.tubeID);
+            }
+        } else {
+            Asset storage sa = shadowAssets[_assetID][_tubeID];
+            if (sa.asset != address(0) && sa.active == false) {
+                sa.active = true;
+                emit AssetActivated(_assetID, _tubeID);
+            }
+        }
+    }
+
+    function deactivateAsset(uint256 _assetID, uint256 _tubeID) public onlyOperator {
+        require(_assetID > 0 && _assetID <= originalAssets.length, "invalid asset id");
+        Asset storage oa = originalAssets[_assetID];
+        if (_tubeID == 0 || oa.tubeID == _tubeID) {
+            if (oa.active == true) {
+                oa.active = false;
+                emit AssetDeactivated(_assetID, oa.tubeID);
+            }
+        } else {
+            Asset storage sa = shadowAssets[_assetID][_tubeID];
+            if (sa.asset != address(0) && sa.active == true) {
+                sa.active = false;
+                emit AssetDeactivated(_assetID, _tubeID);
+            }
+        }
+    }
+
+    function activateTube(uint256 _tubeID) public onlyOperator {
+        if (bannedTubeIDs[_tubeID]) {
+            bannedTubeIDs[_tubeID] = false;
+            emit TubeDeactivated(_tubeID);
+        }
+    }
+
+    function deactivateTube(uint256 _tubeID) public onlyOperator {
+        if (!bannedTubeIDs[_tubeID]) {
+            bannedTubeIDs[_tubeID] = true;
+            emit TubeActivated(_tubeID);
+        }
     }
 
     function grant(address _account) public onlyOwner {

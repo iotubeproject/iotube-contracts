@@ -16,24 +16,18 @@ contract CCFactory is Ownable {
         uint8 _decimals
     );
     address public lord;
-    AssetRegistry public ar;
 
-    constructor(address _lord, AssetRegistry _ar) public {
+    constructor(address _lord) public {
         lord = _lord;
-        ar = _ar;
     }
 
     function createForeignToken(
-        uint256 _sourceTubeID,
-        address _sourceAsset,
         string memory _name,
         string memory _symbol,
         uint8 _decimals
     ) public onlyOwner returns (CCToken) {
-        require(_sourceTubeID != 0 && _sourceAsset != address(0), "invalid parameter");
         CCToken cc = new CCToken(ERC20(0), lord, _name, _symbol, _decimals);
         emit NewCCToken(address(cc), address(0), lord, _name, _symbol, _decimals);
-        ar.register(_sourceTubeID, _sourceAsset, address(cc));
 
         return cc;
     }
