@@ -55,12 +55,16 @@ contract AssetRegistry is Ownable {
         return originalAssets.length;
     }
 
-    function assetOnTube(uint256 _assetID, uint256 _tubeID) public view returns (Asset memory) {
+    function assetOnTubeByID(uint256 _assetID, uint256 _tubeID) public view returns (Asset memory) {
         Asset memory originalAsset = originalAssetByID(_assetID);
         if (originalAsset.tubeID == _tubeID) {
             return originalAsset;
         }
         return shadowAssets[_assetID][_tubeID];
+    }
+
+    function assetOnTube(uint256 _srcTubeID, address _srcAsset, uint256 _dstTubeID) public view returns (Asset memory) {
+        return assetOnTubeByID(assetID(_srcTubeID, _srcAsset), _dstTubeID);
     }
 
     function addOriginalAsset(uint256 _tubeID, address _asset) public onlyOperator returns (uint256) {

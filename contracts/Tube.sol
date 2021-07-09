@@ -14,11 +14,16 @@ interface IToken {
     function burnFrom(address account, uint256 amount) external;
 }
 
+interface IValidator {
+    function validate(bytes32 _key, bytes memory _signatures)
+        external
+        view
+        returns (bool isValid_, address[] memory validators_);
+}
+
 contract Tube is Ownable, Pausable {
     using SafeERC20 for IERC20;
 
-    event ValidatorAdded(address indexed validator);
-    event ValidatorRemoved(address indexed validator);
     event Settled(bytes32 indexed key, address[] validators, bool success);
 
     event Receipt(
@@ -35,9 +40,8 @@ contract Tube is Ownable, Pausable {
     uint256 public tubeID;
     Ledger public ledger;
     Lord public lord;
+    IValidator public validator;
     IERC20 public tubeToken;
-    address[] public validators;
-    mapping(address => uint256) private validatorIndexes;
     mapping(uint256 => mapping(address => uint256)) public counts;
     mapping(uint256 => uint256) public fees;
 
@@ -45,11 +49,13 @@ contract Tube is Ownable, Pausable {
         uint256 _tubeID,
         Ledger _ledger,
         Lord _lord,
+        IValidator _validator,
         IERC20 _tubeToken
     ) public {
         tubeID = _tubeID;
         ledger = _ledger;
         lord = _lord;
+        validator = _validator;
         tubeToken = _tubeToken;
     }
 
@@ -72,44 +78,6 @@ contract Tube is Ownable, Pausable {
 
     function unpause() public onlyOwner {
         _unpause();
-    }
-
-    function getValidators(uint256 offset, uint8 limit)
-        public
-        view
-        returns (uint256 count_, address[] memory validators_)
-    {
-        count_ = validators.length;
-        validators_ = new address[](limit);
-        for (uint256 i = 0; i < limit; i++) {
-            if (offset + i >= validators.length) {
-                break;
-            }
-            validators_[i] = validators[offset + i];
-        }
-    }
-
-    function addValidator(address _validator) public onlyOwner whenPaused {
-        require(_validator != address(0), "invalid validator");
-        if (validatorIndexes[_validator] != 0) {
-            return;
-        }
-        validators.push(_validator);
-        validatorIndexes[_validator] = validators.length;
-        emit ValidatorAdded(_validator);
-    }
-
-    function removeValidator(address _validator) public onlyOwner whenPaused {
-        uint256 index = validatorIndexes[_validator];
-        if (index == 0) {
-            return;
-        }
-        address last = validators[validators.length - 1];
-        validators[index - 1] = last;
-        validatorIndexes[last] = index;
-        validators.pop();
-        delete validatorIndexes[_validator];
-        emit ValidatorRemoved(_validator);
     }
 
     function setFee(uint256 _tubeID, uint256 _fee) public onlyOwner {
@@ -176,8 +144,8 @@ contract Tube is Ownable, Pausable {
         require(_signatures.length % 65 == 0, "invalid signature length");
         bytes32 key = genKey(_srcTubeID, _txIdx, _token, _recipient, _amount, _data);
         ledger.record(key);
-        address[] memory signers = extractValidators(key, _signatures);
-        require(signers.length * 3 > validators.length * 2, "insufficient validators");
+        (bool isValid, address[] memory signers) = validator.validate(key, _signatures);
+        require(isValid, "insufficient validators");
         bool success = true;
         if (_data.length > 0) {
             lord.mint(_token, address(this), _amount);
@@ -215,32 +183,15 @@ contract Tube is Ownable, Pausable {
             keys[i] = genKey(_srcTubeIDs[i], _txIdxs[i], _tokens[i], _recipients[i], _amounts[i], "");
             ledger.record(keys[i]);
         }
-        address[] memory signers = extractValidators(concatKeys(keys), _signatures);
-        require(signers.length * 3 > validators.length * 2, "insufficient validators");
+        (bool isValid, address[] memory signers) = validator.validate(concatKeys(keys), _signatures);
+        require(isValid, "insufficient validators");
         for (uint256 i = 0; i < cnt; i++) {
             lord.mint(_tokens[i], _recipients[i], _amounts[i]);
             emit Settled(keys[i], signers, true);
         }
     }
 
-    function extractValidators(bytes32 _key, bytes memory _signatures)
-        public
-        view
-        returns (address[] memory validators_)
-    {
-        uint256 numOfSignatures = _signatures.length / 65;
-        validators_ = new address[](numOfSignatures);
-        for (uint256 i = 0; i < numOfSignatures; i++) {
-            address validator = recover(_key, _signatures, i * 65);
-            require(validatorIndexes[validator] != 0, "invalid validator");
-            for (uint256 j = 0; j < i; j++) {
-                require(validator != validators_[j], "duplicate validator");
-            }
-            validators_[i] = validator;
-        }
-    }
-
-    function withdrawRelayerFee(address payable _to) external onlyOwner {
+    function withdrawCoin(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
 
@@ -251,34 +202,4 @@ contract Tube is Ownable, Pausable {
         }
     }
 
-    function recover(
-        bytes32 hash,
-        bytes memory signature,
-        uint256 offset
-    ) internal pure returns (address) {
-        bytes32 r;
-        bytes32 s;
-        uint8 v;
-
-        // Divide the signature in r, s and v variables with inline assembly.
-
-        // solium-disable-next-line security/no-inline-assembly
-        assembly {
-            r := mload(add(signature, add(offset, 0x20)))
-            s := mload(add(signature, add(offset, 0x40)))
-            v := byte(0, mload(add(signature, add(offset, 0x60))))
-        }
-
-        // Version of signature should be 27 or 28, but 0 and 1 are also possible versions
-        if (v < 27) {
-            v += 27;
-        }
-
-        // If the version is correct return the signer address
-        if (v != 27 && v != 28) {
-            return (address(0));
-        }
-        // solium-disable-next-line arg-overflow
-        return ecrecover(hash, v, r, s);
-    }
 }
