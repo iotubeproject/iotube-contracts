@@ -30,27 +30,33 @@ contract Validator is Ownable {
         }
     }
 
-    function add(address _validator) public onlyOwner {
-        require(_validator != address(0), "invalid validator");
-        if (validatorIndexes[_validator] != 0) {
-            return;
+    function addAll(address[] memory _validators) public onlyOwner {
+        for (uint256 i = 0; i < _validators.length; i++) {
+            address validator = _validators[i];
+            require(validator != address(0), "invalid validator");
+            if (validatorIndexes[validator] != 0) {
+                continue;
+            }
+            validators.push(validator);
+            validatorIndexes[validator] = validators.length;
+            emit ValidatorAdded(validator);
         }
-        validators.push(_validator);
-        validatorIndexes[_validator] = validators.length;
-        emit ValidatorAdded(_validator);
     }
 
-    function remove(address _validator) public onlyOwner {
-        uint256 index = validatorIndexes[_validator];
-        if (index == 0) {
-            return;
+    function removeAll(address[] memory _validators) public onlyOwner {
+        for (uint256 i = 0; i < _validators.length; i++) {
+            address validator = _validators[i];
+            uint256 index = validatorIndexes[validator];
+            if (index == 0) {
+                continue;
+            }
+            address last = validators[validators.length - 1];
+            validators[index - 1] = last;
+            validatorIndexes[last] = index;
+            validators.pop();
+            delete validatorIndexes[validator];
+            emit ValidatorRemoved(validator);
         }
-        address last = validators[validators.length - 1];
-        validators[index - 1] = last;
-        validatorIndexes[last] = index;
-        validators.pop();
-        delete validatorIndexes[_validator];
-        emit ValidatorRemoved(_validator);
     }
 
     function validate(bytes32 _key, bytes memory _signatures)

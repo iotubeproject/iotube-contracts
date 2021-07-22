@@ -42,6 +42,7 @@ contract Tube is Ownable, Pausable {
     Lord public lord;
     IValidator public validator;
     IERC20 public tubeToken;
+    address public safe;
     mapping(uint256 => mapping(address => uint256)) public counts;
     mapping(uint256 => uint256) public fees;
 
@@ -50,13 +51,15 @@ contract Tube is Ownable, Pausable {
         Ledger _ledger,
         Lord _lord,
         IValidator _validator,
-        IERC20 _tubeToken
+        IERC20 _tubeToken,
+        address _safe
     ) public {
         tubeID = _tubeID;
         ledger = _ledger;
         lord = _lord;
         validator = _validator;
         tubeToken = _tubeToken;
+        safe = _safe;
     }
 
     function upgrade(address _newTube) public onlyOwner {
@@ -95,7 +98,7 @@ contract Tube is Ownable, Pausable {
         require(_amount > 0, "invalid amount");
         uint256 fee = fees[_tubeID];
         if (fee > 0) {
-            tubeToken.safeTransferFrom(msg.sender, address(this), fee);
+            tubeToken.safeTransferFrom(msg.sender, safe, fee);
         }
         IToken(_token).burnFrom(msg.sender, _amount);
         uint256 txIdx = ++counts[_tubeID][_token];

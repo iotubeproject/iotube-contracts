@@ -3,7 +3,6 @@
 pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./AssetRegistry.sol";
 import "./CCToken.sol";
 
 contract CCFactory is Ownable {
