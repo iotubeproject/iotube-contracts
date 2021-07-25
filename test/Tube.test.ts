@@ -32,7 +32,7 @@ function sign(hash: string, privateKey: string) {
 describe("tube uint test", function () {
   let lord: Contract
   let ledger: Contract
-  let validator: Contract
+  let verifier: Contract
   let assetRegistry: Contract
   let factory: Contract
   let tubeToken: Contract
@@ -46,9 +46,10 @@ describe("tube uint test", function () {
   let holder2: SignerWithAddress
   let holder3: SignerWithAddress
   let attacker: SignerWithAddress
+  let treasure: SignerWithAddress
 
   beforeEach(async function () {
-    [owner, holder1, holder2, holder3, attacker] = await ethers.getSigners()
+    [owner, holder1, holder2, holder3, attacker, treasure] = await ethers.getSigners()
 
     const Lord = await ethers.getContractFactory("Lord")
     lord = await Lord.deploy()
@@ -58,9 +59,9 @@ describe("tube uint test", function () {
     ledger = await Ledger.deploy()
     await ledger.deployed()
 
-    const Validator = await ethers.getContractFactory("Validator")
-    validator = await Validator.deploy()
-    await validator.deployed()
+    const Verifier = await ethers.getContractFactory("Verifier")
+    verifier = await Verifier.deploy()
+    await verifier.deployed()
 
     const AssetRegistry = await ethers.getContractFactory("AssetRegistry")
     assetRegistry = await AssetRegistry.deploy()
@@ -78,7 +79,7 @@ describe("tube uint test", function () {
     await tubeToken.deployed()
 
     const Tube = await ethers.getContractFactory("Tube")
-    tube = await Tube.deploy(CHAIN_ID, ledger.address, lord.address, validator.address, tubeToken.address)
+    tube = await Tube.deploy(CHAIN_ID, ledger.address, lord.address, verifier.address, tubeToken.address, treasure.address)
     await tube.deployed()
 
     tx = await lord.transferOwnership(tube.address)
@@ -109,19 +110,24 @@ describe("tube uint test", function () {
     await tx.wait();
   })
 
-  it("Validator", async function () {
-    await expect(validator.add(VALIDATOR_ADDRESSES[0]))
-      .to.emit(validator, "ValidatorAdded")
+  it("CCToken owner", async function () {
+    const owner = await localToken.owner();
+    expect(owner).to.equal("0x0000000000000000000000000000000000000000")
+  })
+
+  it("Verifier", async function () {
+    await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
+      .to.emit(verifier, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[0])
 
-    let ret = await validator.get(0, 1);
+    let ret = await verifier.get(0, 1);
     expect(ret.count_).to.equal(1)
 
-    await expect(validator.remove(VALIDATOR_ADDRESSES[0]))
-      .to.emit(validator, "ValidatorRemoved")
+    await expect(verifier.removeAll([VALIDATOR_ADDRESSES[0]]))
+      .to.emit(verifier, "ValidatorRemoved")
       .withArgs(VALIDATOR_ADDRESSES[0])
 
-    ret = await validator.get(0, 1);
+    ret = await verifier.get(0, 1);
     expect(ret.count_).to.equal(0)
   })
 
@@ -206,16 +212,16 @@ describe("tube uint test", function () {
 
   describe("withdraw", function () {
     beforeEach(async function () {
-      await expect(validator.add(VALIDATOR_ADDRESSES[0]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[0])
 
-      await expect(validator.add(VALIDATOR_ADDRESSES[1]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[1]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[1])
 
-      await expect(validator.add(VALIDATOR_ADDRESSES[2]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[2]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[2])
     })
 
@@ -284,16 +290,16 @@ describe("tube uint test", function () {
   describe("withdraw with data", function () {
     let safe: Contract;
     beforeEach(async function () {
-      await expect(validator.add(VALIDATOR_ADDRESSES[0]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[0])
 
-      await expect(validator.add(VALIDATOR_ADDRESSES[1]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[1]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[1])
 
-      await expect(validator.add(VALIDATOR_ADDRESSES[2]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[2]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[2])
 
       const MockSafe = await ethers.getContractFactory("MockSafe");
@@ -340,16 +346,16 @@ describe("tube uint test", function () {
 
   describe("withdrawInBatch", function () {
     beforeEach(async function () {
-      await expect(validator.add(VALIDATOR_ADDRESSES[0]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[0])
 
-      await expect(validator.add(VALIDATOR_ADDRESSES[1]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[1]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[1])
 
-      await expect(validator.add(VALIDATOR_ADDRESSES[2]))
-        .to.emit(validator, "ValidatorAdded")
+      await expect(verifier.addAll([VALIDATOR_ADDRESSES[2]]))
+        .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[2])
     })
 
@@ -469,7 +475,7 @@ describe("tube uint test", function () {
 describe("tube integrate test", function () {
   let lordA: Contract
   let ledgerA: Contract
-  let validatorA: Contract
+  let verifierA: Contract
   let assetRegistryA: Contract
   let factoryA: Contract
   let tubeTokenA: Contract
@@ -477,7 +483,7 @@ describe("tube integrate test", function () {
 
   let lordB: Contract
   let ledgerB: Contract
-  let validatorB: Contract
+  let verifierB: Contract
   let assetRegistryB: Contract
   let factoryB: Contract
   let tubeTokenB: Contract
@@ -493,9 +499,11 @@ describe("tube integrate test", function () {
   let holder2: SignerWithAddress
   let holder3: SignerWithAddress
   let attacker: SignerWithAddress
+  let treasureA: SignerWithAddress
+  let treasureB: SignerWithAddress
 
   beforeEach(async function () {
-    [ownerA, ownerB, holder1, holder2, holder3, attacker] = await ethers.getSigners()
+    [ownerA, ownerB, holder1, holder2, holder3, attacker, treasureA, treasureB] = await ethers.getSigners()
 
     const Lord = await ethers.getContractFactory("Lord")
     lordA = await Lord.connect(ownerA).deploy()
@@ -509,11 +517,11 @@ describe("tube integrate test", function () {
     ledgerB = await Ledger.connect(ownerB).deploy()
     await ledgerB.deployed()
 
-    const Validator = await ethers.getContractFactory("Validator")
-    validatorA = await Validator.connect(ownerA).deploy()
-    await validatorA.deployed()
-    validatorB = await Validator.connect(ownerB).deploy()
-    await validatorB.deployed()
+    const Verifier = await ethers.getContractFactory("Verifier")
+    verifierA = await Verifier.connect(ownerA).deploy()
+    await verifierA.deployed()
+    verifierB = await Verifier.connect(ownerB).deploy()
+    await verifierB.deployed()
 
     const AssetRegistry = await ethers.getContractFactory("AssetRegistry")
     assetRegistryA = await AssetRegistry.connect(ownerA).deploy()
@@ -539,16 +547,18 @@ describe("tube integrate test", function () {
       CHAIN_ID_A,
       ledgerA.address,
       lordA.address,
-      validatorA.address,
+      verifierA.address,
       tubeTokenA.address,
+      treasureA.address,
     )
     await tubeA.deployed()
     tubeB = await Tube.connect(ownerB).deploy(
       CHAIN_ID_B,
       ledgerB.address,
       lordB.address,
-      validatorB.address,
+      verifierB.address,
       tubeTokenB.address,
+      treasureB.address,
     )
     await tubeB.deployed()
 
@@ -605,16 +615,16 @@ describe("tube integrate test", function () {
       .to.emit(tubeA, "Receipt")
       .withArgs(CHAIN_ID_A, ccTokenA.address, 1, holder1.address, holder1.address, amount, "0x", 0)
 
-    await expect(validatorB.add(VALIDATOR_ADDRESSES[0]))
-      .to.emit(validatorB, "ValidatorAdded")
+    await expect(verifierB.addAll([VALIDATOR_ADDRESSES[0]]))
+      .to.emit(verifierB, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[0])
 
-    await expect(validatorB.add(VALIDATOR_ADDRESSES[1]))
-      .to.emit(validatorB, "ValidatorAdded")
+    await expect(verifierB.addAll([VALIDATOR_ADDRESSES[1]]))
+      .to.emit(verifierB, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[1])
 
-    await expect(validatorB.add(VALIDATOR_ADDRESSES[2]))
-      .to.emit(validatorB, "ValidatorAdded")
+    await expect(verifierB.addAll([VALIDATOR_ADDRESSES[2]]))
+      .to.emit(verifierB, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[2])
 
     let key = await tubeB.genKey(CHAIN_ID_A, 1, ccTokenB.address, holder1.address, amount, "0x")
@@ -638,16 +648,16 @@ describe("tube integrate test", function () {
       .to.emit(tubeB, "Receipt")
       .withArgs(CHAIN_ID_B, ccTokenB.address, 1, holder1.address, holder1.address, amount, "0x", 0)
 
-    await expect(validatorA.add(VALIDATOR_ADDRESSES[0]))
-      .to.emit(validatorA, "ValidatorAdded")
+    await expect(verifierA.addAll([VALIDATOR_ADDRESSES[0]]))
+      .to.emit(verifierA, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[0])
 
-    await expect(validatorA.add(VALIDATOR_ADDRESSES[1]))
-      .to.emit(validatorA, "ValidatorAdded")
+    await expect(verifierA.addAll([VALIDATOR_ADDRESSES[1]]))
+      .to.emit(verifierA, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[1])
 
-    await expect(validatorA.add(VALIDATOR_ADDRESSES[2]))
-      .to.emit(validatorA, "ValidatorAdded")
+    await expect(verifierA.addAll([VALIDATOR_ADDRESSES[2]]))
+      .to.emit(verifierA, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[2])
 
     key = await tubeA.genKey(CHAIN_ID_B, 1, ccTokenA.address, holder1.address, amount, "0x")

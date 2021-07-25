@@ -4,7 +4,7 @@ pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Validator is Ownable {
+contract Verifier is Ownable {
     event ValidatorAdded(address indexed validator);
     event ValidatorRemoved(address indexed validator);
 
@@ -59,7 +59,7 @@ contract Validator is Ownable {
         }
     }
 
-    function validate(bytes32 _key, bytes memory _signatures)
+    function verify(bytes32 _key, bytes memory _signatures)
         public
         view
         returns (bool isValid_, address[] memory validators_)

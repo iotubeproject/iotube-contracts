@@ -2,12 +2,11 @@
 
 pragma solidity 0.7.3;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
 
-contract CCToken is ERC20Burnable {
-    using SafeMath for uint256;
+contract CCToken is ERC20Burnable, Ownable {
     using SafeERC20 for ERC20;
 
     event MinterSet(address indexed minter);
@@ -25,12 +24,16 @@ contract CCToken is ERC20Burnable {
         address _minter,
         string memory _name,
         string memory _symbol,
-        uint8 _decimals
+        uint8 _decimals,
+        bool _isOwnable
     ) public ERC20(_name, _symbol) {
         coToken = _coToken;
         minter = _minter;
         _setupDecimals(_decimals);
         emit MinterSet(_minter);
+        if (!_isOwnable) {
+            renounceOwnership();
+        }
     }
 
     function transferMintership(address _newMinter) public onlyMinter {
@@ -51,8 +54,9 @@ contract CCToken is ERC20Burnable {
         coToken.safeTransfer(msg.sender, _amount);
     }
 
-    function mint(address _to, uint256 _amount) public onlyMinter {
+    function mint(address _to, uint256 _amount) public onlyMinter returns (bool) {
         require(_amount != 0, "amount is 0");
         _mint(_to, _amount);
+        return true;
     }
 }

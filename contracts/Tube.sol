@@ -14,8 +14,8 @@ interface IToken {
     function burnFrom(address account, uint256 amount) external;
 }
 
-interface IValidator {
-    function validate(bytes32 _key, bytes memory _signatures)
+interface IVerifier {
+    function verify(bytes32 _key, bytes memory _signatures)
         external
         view
         returns (bool isValid_, address[] memory validators_);
@@ -40,7 +40,7 @@ contract Tube is Ownable, Pausable {
     uint256 public tubeID;
     Ledger public ledger;
     Lord public lord;
-    IValidator public validator;
+    IVerifier public verifier;
     IERC20 public tubeToken;
     address public safe;
     mapping(uint256 => mapping(address => uint256)) public counts;
@@ -50,14 +50,14 @@ contract Tube is Ownable, Pausable {
         uint256 _tubeID,
         Ledger _ledger,
         Lord _lord,
-        IValidator _validator,
+        IVerifier _verifier,
         IERC20 _tubeToken,
         address _safe
     ) public {
         tubeID = _tubeID;
         ledger = _ledger;
         lord = _lord;
-        validator = _validator;
+        verifier = _verifier;
         tubeToken = _tubeToken;
         safe = _safe;
     }
@@ -147,7 +147,7 @@ contract Tube is Ownable, Pausable {
         require(_signatures.length % 65 == 0, "invalid signature length");
         bytes32 key = genKey(_srcTubeID, _txIdx, _token, _recipient, _amount, _data);
         ledger.record(key);
-        (bool isValid, address[] memory signers) = validator.validate(key, _signatures);
+        (bool isValid, address[] memory signers) = verifier.verify(key, _signatures);
         require(isValid, "insufficient validators");
         bool success = true;
         if (_data.length > 0) {
@@ -186,7 +186,7 @@ contract Tube is Ownable, Pausable {
             keys[i] = genKey(_srcTubeIDs[i], _txIdxs[i], _tokens[i], _recipients[i], _amounts[i], "");
             ledger.record(keys[i]);
         }
-        (bool isValid, address[] memory signers) = validator.validate(concatKeys(keys), _signatures);
+        (bool isValid, address[] memory signers) = verifier.verify(concatKeys(keys), _signatures);
         require(isValid, "insufficient validators");
         for (uint256 i = 0; i < cnt; i++) {
             lord.mint(_tokens[i], _recipients[i], _amounts[i]);

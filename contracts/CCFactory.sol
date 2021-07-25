@@ -25,7 +25,7 @@ contract CCFactory is Ownable {
         string memory _symbol,
         uint8 _decimals
     ) public onlyOwner returns (CCToken) {
-        CCToken cc = new CCToken(ERC20(0), lord, _name, _symbol, _decimals);
+        CCToken cc = new CCToken(ERC20(0), lord, _name, _symbol, _decimals, false);
         emit NewCCToken(address(cc), address(0), lord, _name, _symbol, _decimals);
 
         return cc;
@@ -38,7 +38,7 @@ contract CCFactory is Ownable {
         uint8 _decimals
     ) public onlyOwner returns (CCToken) {
         require(address(_coToken) != address(0), "invalid paramter");
-        CCToken cc = new CCToken(_coToken, lord, _name, _symbol, _decimals);
+        CCToken cc = new CCToken(_coToken, lord, _name, _symbol, _decimals, false);
         emit NewCCToken(address(cc), address(_coToken), lord, _name, _symbol, _decimals);
         return cc;
     }
