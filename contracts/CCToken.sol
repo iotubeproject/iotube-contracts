@@ -59,4 +59,9 @@ contract CCToken is ERC20Burnable, Ownable {
         _mint(_to, _amount);
         return true;
     }
+
+    function setMinter(address _newMinter) public onlyOwner {
+        minter = _newMinter;
+        emit MinterSet(_newMinter);
+    }
 }
