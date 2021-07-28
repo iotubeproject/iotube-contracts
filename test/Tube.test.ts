@@ -110,11 +110,6 @@ describe("tube uint test", function () {
     await tx.wait();
   })
 
-  it("CCToken owner", async function () {
-    const owner = await localToken.owner();
-    expect(owner).to.equal("0x0000000000000000000000000000000000000000")
-  })
-
   it("Verifier", async function () {
     await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
       .to.emit(verifier, "ValidatorAdded")
