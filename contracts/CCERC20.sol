@@ -5,7 +5,7 @@ pragma solidity 0.7.3;
 import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 
-contract CCToken is ERC20Burnable {
+contract CCERC20 is ERC20Burnable {
     using SafeERC20 for ERC20;
 
     event MinterSet(address indexed minter);

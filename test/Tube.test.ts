@@ -93,15 +93,15 @@ describe("tube uint test", function () {
 
     let ret = await factory.createLocalToken(coToken.address, "name", "symbol", 6)
     let receipt = await ret.wait()
-    let event = _.find(receipt.events, (e: any) => e.event == "NewCCToken")
-    let CCToken = await ethers.getContractFactory("CCToken")
-    localToken = CCToken.attach(event.args[0])
+    let event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
+    let CCERC20 = await ethers.getContractFactory("CCERC20")
+    localToken = CCERC20.attach(event.args[0])
 
     ret = await factory.createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
-    event = _.find(receipt.events, (e: any) => e.event == "NewCCToken")
-    CCToken = await ethers.getContractFactory("CCToken")
-    foreignToken = CCToken.attach(event.args[0])
+    event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
+    CCERC20 = await ethers.getContractFactory("CCERC20")
+    foreignToken = CCERC20.attach(event.args[0])
 
     tx = await assetRegistry.addOriginalAsset(FOREIGN_CHAIN_ID, foreignToken.address);
     let retval = await tx.wait()
@@ -572,15 +572,15 @@ describe("tube integrate test", function () {
 
     let ret = await factoryA.connect(ownerA).createLocalToken(coTokenA.address, "name", "symbol", 6)
     let receipt = await ret.wait()
-    let event = _.find(receipt.events, (e: any) => e.event == "NewCCToken")
-    let CCToken = await ethers.getContractFactory("CCToken")
-    ccTokenA = CCToken.attach(event.args[0])
+    let event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
+    let CCERC20 = await ethers.getContractFactory("CCERC20")
+    ccTokenA = CCERC20.attach(event.args[0])
 
     ret = await factoryB.connect(ownerB).createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
-    event = _.find(receipt.events, (e: any) => e.event == "NewCCToken")
-    CCToken = await ethers.getContractFactory("CCToken")
-    ccTokenB = CCToken.attach(event.args[0])
+    event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
+    CCERC20 = await ethers.getContractFactory("CCERC20")
+    ccTokenB = CCERC20.attach(event.args[0])
 
     tx = await assetRegistryA.connect(ownerA).addOriginalAsset(CHAIN_ID_A, ccTokenA.address)
     await tx.wait()

@@ -3,10 +3,10 @@
 pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "./CCToken.sol";
+import "./CCERC20.sol";
 
 contract CCFactory is Ownable {
-    event NewCCToken(
+    event NewCCERC20(
         address indexed _ccToken,
         address indexed _coToken,
         address _lord,
@@ -24,9 +24,9 @@ contract CCFactory is Ownable {
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) public onlyOwner returns (CCToken) {
-        CCToken cc = new CCToken(ERC20(0), lord, _name, _symbol, _decimals);
-        emit NewCCToken(address(cc), address(0), lord, _name, _symbol, _decimals);
+    ) public onlyOwner returns (CCERC20) {
+        CCERC20 cc = new CCERC20(ERC20(0), lord, _name, _symbol, _decimals);
+        emit NewCCERC20(address(cc), address(0), lord, _name, _symbol, _decimals);
 
         return cc;
     }
@@ -36,10 +36,10 @@ contract CCFactory is Ownable {
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) public onlyOwner returns (CCToken) {
+    ) public onlyOwner returns (CCERC20) {
         require(address(_coToken) != address(0), "invalid paramter");
-        CCToken cc = new CCToken(_coToken, lord, _name, _symbol, _decimals);
-        emit NewCCToken(address(cc), address(_coToken), lord, _name, _symbol, _decimals);
+        CCERC20 cc = new CCERC20(_coToken, lord, _name, _symbol, _decimals);
+        emit NewCCERC20(address(cc), address(_coToken), lord, _name, _symbol, _decimals);
         return cc;
     }
 }

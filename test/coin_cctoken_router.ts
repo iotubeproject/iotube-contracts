@@ -24,11 +24,11 @@ describe("router test", function () {
     const WIOTX = await ethers.getContractFactory("WIOTX");
     wrappedCoin = await WIOTX.deploy();
 
-    const CCToken = await ethers.getContractFactory("CCToken");
-    ccCoin = await CCToken.deploy(wrappedCoin.address, "0x0000000000000000000000000000000000000000", "crosschain-iotx", "cc-iotx", 18);
+    const CCERC20 = await ethers.getContractFactory("CCERC20");
+    ccCoin = await CCERC20.deploy(wrappedCoin.address, "0x0000000000000000000000000000000000000000", "crosschain-iotx", "cc-iotx", 18);
 
-    const CoinCCTokenRouter = await ethers.getContractFactory("CoinCCTokenRouter");
-    router = await CoinCCTokenRouter.deploy(ccCoin.address);
+    const CCCoinRouter = await ethers.getContractFactory("CCCoinRouter");
+    router = await CCCoinRouter.deploy(ccCoin.address);
     await wrappedCoin.connect(holder1).approve(router.address, "1000000000000000000000000000");
     await ccCoin.connect(holder1).approve(router.address, "1000000000000000000000000000");
   })
@@ -38,19 +38,19 @@ describe("router test", function () {
     await router.connect(holder1).swapCoinForWrappedCoin(amount, {value: amount});
     expect(await wrappedCoin.balanceOf(holder1.address)).to.equal(amount);
     expect(await ccCoin.balanceOf(holder1.address)).to.equal(0);
-    await router.connect(holder1).swapWrappedCoinForCCToken(amount);
+    await router.connect(holder1).swapWrappedCoinForCCCoin(amount);
     expect(await wrappedCoin.balanceOf(holder1.address)).to.equal(0);
     expect(await ccCoin.balanceOf(holder1.address)).to.equal(amount);
-    await router.connect(holder1).swapCCTokenForCoin(amount);
+    await router.connect(holder1).swapCCCoinForCoin(amount);
     expect(await ccCoin.balanceOf(holder1.address)).to.equal(0);
   });
 
   it("iotx<->cc-iotx->wiotx->iotx", async function () {
     expect(await ccCoin.balanceOf(holder1.address)).to.equal(0);
-    await router.connect(holder1).swapCoinForCCToken(amount, {value: amount});
+    await router.connect(holder1).swapCoinForCCCoin(amount, {value: amount});
     expect(await ccCoin.balanceOf(holder1.address)).to.equal(amount);
     expect(await wrappedCoin.balanceOf(holder1.address)).to.equal(0);
-    await router.connect(holder1).swapCCTokenForWrappedCoin(amount);
+    await router.connect(holder1).swapCCCoinForWrappedCoin(amount);
     expect(await ccCoin.balanceOf(holder1.address)).to.equal(0);
     expect(await wrappedCoin.balanceOf(holder1.address)).to.equal(amount);
     await router.connect(holder1).swapWrappedCoinForCoin(amount);
