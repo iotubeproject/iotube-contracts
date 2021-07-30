@@ -23,14 +23,45 @@ contract CoinCCTokenRouter {
         wrappedCoin = WrappedCoin(address(ct));
     }
 
-    function deposit(uint256 _amount) public payable {
-        wrappedCoin.deposit{value: _amount}();
-        coinCCToken.deposit(_amount);
-        ERC20(coinCCToken).safeTransfer(msg.sender, _amount);
+    fallback() external payable {}
+
+    function resetAllowance() public {
+        ERC20 wc = ERC20(address(wrappedCoin));
+        uint256 allowance = wc.allowance(address(this), address(coinCCToken));
+        if (allowance != uint256(-1)) {
+            wc.safeIncreaseAllowance(address(coinCCToken), uint256(-1) - allowance);
+        }
     }
 
-    function withdraw(uint256 _amount) public {
+    function swapCoinForCCToken(uint256 _amount) public payable {
+        wrappedCoin.deposit{value: _amount}();
+        coinCCToken.depositTo(msg.sender, _amount);
+    }
+
+    function swapCCTokenForCoin(uint256 _amount) public {
+        ERC20(coinCCToken).safeTransferFrom(msg.sender, address(this), _amount);
         coinCCToken.withdraw(_amount);
+        wrappedCoin.withdraw(_amount);
+        msg.sender.transfer(_amount);
+    }
+
+    function swapWrappedCoinForCCToken(uint256 _amount) public {
+        ERC20(address(wrappedCoin)).safeTransferFrom(msg.sender, address(this), _amount);
+        coinCCToken.depositTo(msg.sender, _amount);
+    }
+
+    function swapCCTokenForWrappedCoin(uint256 _amount) public {
+        ERC20(coinCCToken).safeTransferFrom(msg.sender, address(this), _amount);
+        coinCCToken.withdrawTo(msg.sender, _amount);
+    }
+
+    function swapCoinForWrappedCoin(uint256 _amount) public payable {
+        wrappedCoin.deposit{value: _amount}();
+        ERC20(address(wrappedCoin)).safeTransfer(msg.sender, _amount);
+    }
+
+    function swapWrappedCoinForCoin(uint256 _amount) public {
+        ERC20(address(wrappedCoin)).safeTransferFrom(msg.sender, address(this), _amount);
         wrappedCoin.withdraw(_amount);
         msg.sender.transfer(_amount);
     }
