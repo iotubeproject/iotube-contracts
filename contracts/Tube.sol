@@ -37,6 +37,17 @@ contract Tube is Ownable, Pausable {
         uint256 fee
     );
 
+    event NFTReceipt(
+        uint256 indexed tubeID,
+        address indexed token,
+        uint256 indexed tokenID,
+        uint256 txIdx,
+        address sender,
+        address recipient,
+        bytes data,
+        uint256 fee
+    );
+
     uint256 public tubeID;
     Ledger public ledger;
     Lord public lord;
@@ -100,9 +111,27 @@ contract Tube is Ownable, Pausable {
         if (fee > 0) {
             tubeToken.safeTransferFrom(msg.sender, safe, fee);
         }
+        // TODO: let lord handle it
         IToken(_token).burnFrom(msg.sender, _amount);
         uint256 txIdx = ++counts[_tubeID][_token];
         emit Receipt(_tubeID, _token, txIdx, msg.sender, _to, _amount, _data, fee);
+    }
+
+    function depositNFTTo(
+        uint256 _tubeID,
+        address _token,
+        uint256 _tokenID,
+        address _to,
+        bytes memory _data
+    ) public whenNotPaused {
+        require(_to != address(0), "invalid recipient");
+        uint256 fee = fees[_tubeID];
+        if (fee > 0) {
+            tubeToken.safeTransferFrom(msg.sender, safe, fee);
+        }
+        // TODO: send token to lord
+        uint256 txIdx = ++counts[_tubeID][_token];
+        emit NFTReceipt(_tubeID, _token, _tokenID, txIdx, msg.sender, _to, _data, fee);
     }
 
     function deposit(
@@ -112,6 +141,15 @@ contract Tube is Ownable, Pausable {
         bytes memory _data
     ) public {
         depositTo(_tubeID, _token, msg.sender, _amount, _data);
+    }
+
+   function depositNFT(
+        uint256 _tubeID,
+        address _token,
+        uint256 _tokenID,
+        bytes memory _data
+    ) public {
+        depositNFTTo(_tubeID, _token, _tokenID, msg.sender, _data);
     }
 
     function genKey(
