@@ -8,7 +8,11 @@ contract MockSafe {
     mapping(address => mapping(address => uint256)) public points;
     event DepositToSafe(address token, address recipient, uint256 amount);
 
-    function deposit(IERC20 token, address recipient, uint256 amount) public {
+    function deposit(
+        IERC20 token,
+        address recipient,
+        uint256 amount
+    ) public {
         require(amount >= 1000, "invalid amount");
         token.safeTransferFrom(msg.sender, address(this), amount);
         points[address(token)][recipient] += amount;

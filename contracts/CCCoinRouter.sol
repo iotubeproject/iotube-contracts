@@ -7,6 +7,7 @@ import "./CCERC20.sol";
 
 interface WrappedCoin {
     function deposit() external payable;
+
     function withdraw(uint256) external;
 }
 

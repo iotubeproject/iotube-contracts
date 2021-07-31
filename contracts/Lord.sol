@@ -56,7 +56,8 @@ contract Lord is Ownable {
                 return true;
             }
         }
-        (bool success, bytes memory retval) = _token.call(abi.encodeWithSelector(IMintableToken(_token).mint.selector, _recipient, _amount));
+        (bool success, bytes memory retval) =
+            _token.call(abi.encodeWithSelector(IMintableToken(_token).mint.selector, _recipient, _amount));
         require(success, "low-level mint call failed");
         if (retval.length > 0) {
             // solhint-disable-next-line max-line-length

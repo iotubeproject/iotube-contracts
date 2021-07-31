@@ -63,7 +63,11 @@ contract AssetRegistry is Ownable {
         return shadowAssets[_assetID][_tubeID];
     }
 
-    function assetOnTube(uint256 _srcTubeID, address _srcAsset, uint256 _dstTubeID) public view returns (Asset memory) {
+    function assetOnTube(
+        uint256 _srcTubeID,
+        address _srcAsset,
+        uint256 _dstTubeID
+    ) public view returns (Asset memory) {
         return assetOnTubeByID(assetID(_srcTubeID, _srcAsset), _dstTubeID);
     }
 
@@ -79,8 +83,15 @@ contract AssetRegistry is Ownable {
         return id;
     }
 
-    function addAssetOnTube(uint256 _assetID, uint256 _tubeID, address _asset) public onlyOperator {
-        require(_tubeID > 0 && _asset != address(0) && _assetID > 0 && _assetID <= originalAssets.length, "invalid parameter");
+    function addAssetOnTube(
+        uint256 _assetID,
+        uint256 _tubeID,
+        address _asset
+    ) public onlyOperator {
+        require(
+            _tubeID > 0 && _asset != address(0) && _assetID > 0 && _assetID <= originalAssets.length,
+            "invalid parameter"
+        );
         require(shadowAssets[_assetID][_tubeID].asset == address(0), "invalid asset");
         shadowAssets[_assetID][_tubeID] = Asset(_tubeID, _asset, true);
         shadowAssetIDs[_tubeID][_asset] = _assetID;

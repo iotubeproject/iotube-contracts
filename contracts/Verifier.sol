@@ -15,11 +15,7 @@ contract Verifier is Ownable {
         return validators.length;
     }
 
-    function get(uint256 offset, uint8 limit)
-        public
-        view
-        returns (uint256 count_, address[] memory validators_)
-    {
+    function get(uint256 offset, uint8 limit) public view returns (uint256 count_, address[] memory validators_) {
         count_ = validators.length;
         validators_ = new address[](limit);
         for (uint256 i = 0; i < limit; i++) {

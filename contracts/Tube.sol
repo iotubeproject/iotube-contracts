@@ -143,7 +143,7 @@ contract Tube is Ownable, Pausable {
         depositTo(_tubeID, _token, msg.sender, _amount, _data);
     }
 
-   function depositNFT(
+    function depositNFT(
         uint256 _tubeID,
         address _token,
         uint256 _tokenID,
@@ -242,5 +242,4 @@ contract Tube is Ownable, Pausable {
             _token.safeTransfer(_to, balance);
         }
     }
-
 }
