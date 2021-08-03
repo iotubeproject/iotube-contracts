@@ -72,25 +72,21 @@ contract Lord is Ownable {
         address _sender,
         uint256 _amount
     ) public onlyOwner {
-        if (address(standardTokenList) != address(0)) {
-            if (standardTokenList.isAllowed(_token)) {
-                // transfer token to standardTokenList
-                _callOptionalReturn(
-                    _token,
-                    abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, tokenSafe, _amount)
-                );
-                return;
-            }
+        if (address(standardTokenList) != address(0) && standardTokenList.isAllowed(_token)) {
+            // transfer token to standardTokenList
+            _callOptionalReturn(
+                _token,
+                abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, tokenSafe, _amount)
+            );
+            return;
         }
-        if (address(proxyTokenList) != address(0)) {
-            if (proxyTokenList.isAllowed(_token)) {
-                _callOptionalReturn(
-                    _token,
-                    abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, address(this), _amount)
-                );
-                _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burn.selector, _amount));
-                return;
-            }
+        if (address(proxyTokenList) != address(0) && proxyTokenList.isAllowed(_token)) {
+            _callOptionalReturn(
+                _token,
+                abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, address(this), _amount)
+            );
+            _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burn.selector, _amount));
+            return;
         }
         _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burnFrom.selector, _sender, _amount));
     }
@@ -100,11 +96,11 @@ contract Lord is Ownable {
         address _recipient,
         uint256 _amount
     ) public onlyOwner {
-        if (standardTokenList.isAllowed(_token)) {
+        if (address(standardTokenList) != address(0) && standardTokenList.isAllowed(_token)) {
             require(tokenSafe.mint(_token, _recipient, _amount), "token safe mint failed");
             return;
         }
-        if (proxyTokenList.isAllowed(_token)) {
+        if (address(proxyTokenList) != address(0) && proxyTokenList.isAllowed(_token)) {
             require(minterPool.mint(_token, _recipient, _amount), "proxy token mint failed");
         }
         _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).mint.selector, _recipient, _amount));

@@ -3,7 +3,7 @@ import { ethers } from "hardhat"
 import { expect } from "chai"
 import { Contract } from "@ethersproject/contracts"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { ecsign, toBuffer, setLengthLeft } from "ethereumjs-util"
+import { ecsign, toBuffer, setLengthLeft, zeroAddress } from "ethereumjs-util"
 
 const privateKeyToAddress = require("ethereum-private-key-to-address")
 
@@ -52,7 +52,7 @@ describe("tube uint test", function () {
     [owner, holder1, holder2, holder3, attacker, treasure] = await ethers.getSigners()
 
     const Lord = await ethers.getContractFactory("Lord")
-    lord = await Lord.deploy()
+    lord = await Lord.deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)
     await lord.deployed()
 
     const Ledger = await ethers.getContractFactory("Ledger")
@@ -158,9 +158,9 @@ describe("tube uint test", function () {
         .to.emit(coToken, "Transfer")
         .withArgs(owner.address, localToken.address, 1000000)
 
-      await expect(localToken.approve(tube.address, 300000))
+      await expect(localToken.approve(lord.address, 300000))
         .to.emit(localToken, "Approval")
-        .withArgs(owner.address, tube.address, 300000)
+        .withArgs(owner.address, lord.address, 300000)
 
       await expect(tube.deposit(CHAIN_ID, localToken.address, 300000, "0x"))
         .to.emit(tube, "Receipt")
@@ -192,9 +192,9 @@ describe("tube uint test", function () {
         .to.emit(tubeToken, "Approval")
         .withArgs(owner.address, tube.address, 1000000)
 
-      await expect(localToken.approve(tube.address, 300000))
+      await expect(localToken.approve(lord.address, 300000))
         .to.emit(localToken, "Approval")
-        .withArgs(owner.address, tube.address, 300000)
+        .withArgs(owner.address, lord.address, 300000)
 
       await expect(tube.deposit(CHAIN_ID, localToken.address, 300000, "0x"))
         .to.emit(tube, "Receipt")
@@ -501,9 +501,9 @@ describe("tube integrate test", function () {
     [ownerA, ownerB, holder1, holder2, holder3, attacker, treasureA, treasureB] = await ethers.getSigners()
 
     const Lord = await ethers.getContractFactory("Lord")
-    lordA = await Lord.connect(ownerA).deploy()
+    lordA = await Lord.connect(ownerA).deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)
     await lordA.deployed()
-    lordB = await Lord.connect(ownerB).deploy()
+    lordB = await Lord.connect(ownerB).deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)
     await lordB.deployed()
 
     const Ledger = await ethers.getContractFactory("Ledger")
@@ -602,9 +602,9 @@ describe("tube integrate test", function () {
       .to.emit(ccTokenA, "Transfer")
       .withArgs(ZERO_ADDRESS, holder1.address, amount)
 
-    await expect(ccTokenA.connect(holder1).approve(tubeA.address, amount))
+    await expect(ccTokenA.connect(holder1).approve(lordA.address, amount))
       .to.emit(ccTokenA, "Approval")
-      .withArgs(holder1.address, tubeA.address, amount)
+      .withArgs(holder1.address, lordA.address, amount)
 
     await expect(tubeA.connect(holder1).deposit(CHAIN_ID_A, ccTokenA.address, amount, "0x"))
       .to.emit(tubeA, "Receipt")
@@ -635,9 +635,9 @@ describe("tube integrate test", function () {
 
     expect(await ccTokenB.balanceOf(holder1.address)).to.equal(amount)
 
-    await expect(ccTokenB.connect(holder1).approve(tubeB.address, amount))
+    await expect(ccTokenB.connect(holder1).approve(lordB.address, amount))
       .to.emit(ccTokenB, "Approval")
-      .withArgs(holder1.address, tubeB.address, amount)
+      .withArgs(holder1.address, lordB.address, amount)
 
     await expect(tubeB.connect(holder1).deposit(CHAIN_ID_B, ccTokenB.address, amount, "0x"))
       .to.emit(tubeB, "Receipt")
