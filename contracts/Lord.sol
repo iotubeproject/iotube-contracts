@@ -6,16 +6,29 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 interface IToken {
-    function mint(address, uint256) external;
-    function burn(address) external;
-    function burnFrom(address, uint256) external;
-    function transferFrom(address, address, uint256) external;
+    function mint(address recipient, uint256 amount) external;
+
+    function burn(uint256 amount) external;
+
+    function burnFrom(address owner, uint256 amount) external;
+
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) external;
 }
 
 interface IERC721Mintable {
-    function safeMint(address, uint256, bytes memory) external;
-    function mint(address, uint256) external;
-    function burn(uint256) external;
+    function safeMint(
+        address recipient,
+        uint256 tokenID,
+        bytes memory data
+    ) external;
+
+    function mint(address recipient, uint256 tokenID) external;
+
+    function burn(uint256 tokenID) external;
 }
 
 interface IAllowlist {
@@ -23,8 +36,14 @@ interface IAllowlist {
 }
 
 interface IMinter {
-    function mint(address, address, uint256) external returns (bool);
+    function mint(
+        address _token,
+        address _recipient,
+        uint256 _amount
+    ) external returns (bool);
+
     function transferOwnership(address newOwner) external;
+
     function owner() external view returns (address);
 }
 
@@ -48,17 +67,27 @@ contract Lord is Ownable {
         minterPool = _minterPool;
     }
 
-    function burn(address _token, address _sender, uint256 _amount) public onlyOwner {
+    function burn(
+        address _token,
+        address _sender,
+        uint256 _amount
+    ) public onlyOwner {
         if (address(standardTokenList) != address(0)) {
             if (standardTokenList.isAllowed(_token)) {
                 // transfer token to standardTokenList
-                _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, tokenSafe, _amount));
+                _callOptionalReturn(
+                    _token,
+                    abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, tokenSafe, _amount)
+                );
                 return;
             }
         }
         if (address(proxyTokenList) != address(0)) {
             if (proxyTokenList.isAllowed(_token)) {
-                _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, address(this), _amount));
+                _callOptionalReturn(
+                    _token,
+                    abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, address(this), _amount)
+                );
                 _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burn.selector, _amount));
                 return;
             }
@@ -92,16 +121,22 @@ contract Lord is Ownable {
 
     function upgrade(address _newLord) public onlyOwner {
         if (minterPool.owner() == address(this)) {
-            _callOptionalReturn(address(tokenSafe), abi.encodeWithSelector(minterPool.transferOwnership.selector, _newLord));
+            _callOptionalReturn(
+                address(tokenSafe),
+                abi.encodeWithSelector(minterPool.transferOwnership.selector, _newLord)
+            );
         }
         if (tokenSafe.owner() == address(this)) {
-            _callOptionalReturn(address(tokenSafe), abi.encodeWithSelector(tokenSafe.transferOwnership.selector, _newLord));
+            _callOptionalReturn(
+                address(tokenSafe),
+                abi.encodeWithSelector(tokenSafe.transferOwnership.selector, _newLord)
+            );
         }
     }
 
     function _callOptionalReturn(address addr, bytes memory data) private {
         bytes memory returndata = addr.functionCall(data, "SafeERC20: low-level call failed");
-        if (returndata.length > 0) { // Return data is optional
+        if (returndata.length > 0) {
             // solhint-disable-next-line max-line-length
             require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
         }

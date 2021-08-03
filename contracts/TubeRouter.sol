@@ -45,7 +45,7 @@ contract TubeRouter is Ownable {
         }
     }
 
-    function relayFee(uint256 _tubeID) public view returns(uint256) {
+    function relayFee(uint256 _tubeID) public view returns (uint256) {
         require(relayFees[_tubeID].exists, "not supported");
         return relayFees[_tubeID].fee;
     }
@@ -88,5 +88,4 @@ contract TubeRouter is Ownable {
             _token.safeTransfer(_to, balance);
         }
     }
-
 }
