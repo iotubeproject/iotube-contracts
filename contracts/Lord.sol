@@ -3,66 +3,107 @@
 pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 
-interface IMintableToken {
-    function mint(address, uint256) external returns (bool);
+interface IToken {
+    function mint(address, uint256) external;
+    function burn(address) external;
+    function burnFrom(address, uint256) external;
+    function transferFrom(address, address, uint256) external;
+}
+
+interface IERC721Mintable {
+    function safeMint(address, uint256, bytes memory) external;
+    function mint(address, uint256) external;
+    function burn(uint256) external;
 }
 
 interface IAllowlist {
     function isAllowed(address) external view returns (bool);
 }
 
+interface IMinter {
+    function mint(address, address, uint256) external returns (bool);
+    function transferOwnership(address newOwner) external;
+    function owner() external view returns (address);
+}
+
 contract Lord is Ownable {
-    event HostedLordAdded(address tokenList, address lord);
-    event HostedLordRemoved(address tokenList, address lord);
+    using Address for address;
 
-    Lord[] public hostedLords;
-    IAllowlist[] public tokenLists;
+    IAllowlist public standardTokenList;
+    IMinter public tokenSafe;
+    IAllowlist public proxyTokenList;
+    IMinter public minterPool;
 
-    function addHostedLord(IAllowlist _tokenList, Lord _lord) public onlyOwner {
-        for (uint256 i = 0; i < tokenLists.length; i++) {
-            require(_tokenList != tokenLists[i], "dup token list");
-        }
-        hostedLords.push(_lord);
-        tokenLists.push(_tokenList);
-        emit HostedLordAdded(address(_tokenList), address(_lord));
+    constructor(
+        IAllowlist _standardTokenList,
+        IMinter _tokenSafe,
+        IAllowlist _proxyTokenList,
+        IMinter _minterPool
+    ) public {
+        standardTokenList = _standardTokenList;
+        tokenSafe = _tokenSafe;
+        proxyTokenList = _proxyTokenList;
+        minterPool = _minterPool;
     }
 
-    function removeMinter(IAllowlist _tokenList) public onlyOwner {
-        uint256 len = tokenLists.length;
-        for (uint256 i = 0; i < len; i++) {
-            if (_tokenList == tokenLists[i]) {
-                tokenLists[i] = tokenLists[len - 1];
-                tokenLists.pop();
-                Lord lord = hostedLords[i];
-                hostedLords[i] = hostedLords[len - 1];
-                hostedLords.pop();
-                if (lord.owner() == address(this)) {
-                    lord.transferOwnership(msg.sender);
-                }
-                emit HostedLordRemoved(address(_tokenList), address(lord));
+    function burn(address _token, address _sender, uint256 _amount) public onlyOwner {
+        if (address(standardTokenList) != address(0)) {
+            if (standardTokenList.isAllowed(_token)) {
+                // transfer token to standardTokenList
+                _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, tokenSafe, _amount));
+                return;
             }
         }
+        if (address(proxyTokenList) != address(0)) {
+            if (proxyTokenList.isAllowed(_token)) {
+                _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, address(this), _amount));
+                _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burn.selector, _amount));
+                return;
+            }
+        }
+        _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burnFrom.selector, _sender, _amount));
     }
 
     function mint(
         address _token,
         address _recipient,
         uint256 _amount
-    ) public onlyOwner returns (bool) {
-        for (uint256 i = 0; i < tokenLists.length; i++) {
-            if (tokenLists[i].isAllowed(_token)) {
-                require(hostedLords[i].mint(_token, _recipient, _amount), "hosted lord failed to mint");
-                return true;
-            }
+    ) public onlyOwner {
+        if (standardTokenList.isAllowed(_token)) {
+            require(tokenSafe.mint(_token, _recipient, _amount), "token safe mint failed");
+            return;
         }
-        (bool success, bytes memory retval) =
-            _token.call(abi.encodeWithSelector(IMintableToken(_token).mint.selector, _recipient, _amount));
-        require(success, "low-level mint call failed");
-        if (retval.length > 0) {
+        if (proxyTokenList.isAllowed(_token)) {
+            require(minterPool.mint(_token, _recipient, _amount), "proxy token mint failed");
+        }
+        _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).mint.selector, _recipient, _amount));
+    }
+
+    function mintNFT(
+        address _token,
+        uint256 _tokenID,
+        address _recipient,
+        bytes memory _data
+    ) public onlyOwner {
+        IERC721Mintable(_token).safeMint(_recipient, _tokenID, _data);
+    }
+
+    function upgrade(address _newLord) public onlyOwner {
+        if (minterPool.owner() == address(this)) {
+            _callOptionalReturn(address(tokenSafe), abi.encodeWithSelector(minterPool.transferOwnership.selector, _newLord));
+        }
+        if (tokenSafe.owner() == address(this)) {
+            _callOptionalReturn(address(tokenSafe), abi.encodeWithSelector(tokenSafe.transferOwnership.selector, _newLord));
+        }
+    }
+
+    function _callOptionalReturn(address addr, bytes memory data) private {
+        bytes memory returndata = addr.functionCall(data, "SafeERC20: low-level call failed");
+        if (returndata.length > 0) { // Return data is optional
             // solhint-disable-next-line max-line-length
-            require(abi.decode(retval, (bool)), "mint operation did not succeed");
+            require(abi.decode(returndata, (bool)), "SafeERC20: ERC20 operation did not succeed");
         }
-        return true;
     }
 }

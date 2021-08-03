@@ -52,8 +52,7 @@ contract CCERC721 is ERC721Burnable {
         coToken.safeTransferFrom(address(this), _to, _id);
     }
 
-    function mint(address _to, uint256 _id) public onlyMinter returns (bool) {
-        _mint(_to, _id);
-        return true;
+    function safeMint(address _to, uint256 _id, bytes memory _data) public onlyMinter {
+        _safeMint(_to, _id, _data);
     }
 }

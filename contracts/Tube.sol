@@ -4,15 +4,10 @@ pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "./Ledger.sol";
 import "./Lord.sol";
-
-interface IToken {
-    function mint(address account, uint256 amount) external;
-
-    function burnFrom(address account, uint256 amount) external;
-}
 
 interface IVerifier {
     function verify(bytes32 _key, bytes memory _signatures)
@@ -111,8 +106,7 @@ contract Tube is Ownable, Pausable {
         if (fee > 0) {
             tubeToken.safeTransferFrom(msg.sender, safe, fee);
         }
-        // TODO: let lord handle it
-        IToken(_token).burnFrom(msg.sender, _amount);
+        lord.burn(_token, msg.sender, _amount);
         uint256 txIdx = ++counts[_tubeID][_token];
         emit Receipt(_tubeID, _token, txIdx, msg.sender, _to, _amount, _data, fee);
     }
@@ -129,7 +123,7 @@ contract Tube is Ownable, Pausable {
         if (fee > 0) {
             tubeToken.safeTransferFrom(msg.sender, safe, fee);
         }
-        // TODO: send token to lord
+        IERC721Mintable(_token).burn(_tokenID);
         uint256 txIdx = ++counts[_tubeID][_token];
         emit NFTReceipt(_tubeID, _token, _tokenID, txIdx, msg.sender, _to, _data, fee);
     }
@@ -161,6 +155,17 @@ contract Tube is Ownable, Pausable {
         bytes memory _data
     ) public view returns (bytes32) {
         return keccak256(abi.encodePacked(_srcTubeID, _txIdx, tubeID, _token, _recipient, _amount, _data));
+    }
+
+    function genKeyForNFT(
+        uint256 _srcTubeID,
+        uint256 _txIdx,
+        address _token,
+        uint256 _tokenID,
+        address _recipient,
+        bytes memory _data
+    ) public view returns (bytes32) {
+        return keccak256(abi.encodePacked(_srcTubeID, _txIdx, tubeID, _token, _tokenID, _recipient, _data));
     }
 
     function concatKeys(bytes32[] memory keys) public pure returns (bytes32) {
@@ -199,6 +204,26 @@ contract Tube is Ownable, Pausable {
             lord.mint(_token, _recipient, _amount);
         }
         emit Settled(key, signers, success);
+    }
+
+    function withdrawNFT(
+        uint256 _srcTubeID,
+        uint256 _txIdx,
+        address _token,
+        uint256 _tokenID,
+        address _recipient,
+        bytes memory _data,
+        bytes memory _signatures
+    ) public whenNotPaused {
+        require(_recipient != address(0), "invalid recipient");
+        require(_signatures.length % 65 == 0, "invalid signature length");
+        bytes32 key = genKeyForNFT(_srcTubeID, _txIdx, _token, _tokenID, _recipient, _data);
+        ledger.record(key);
+        (bool isValid, address[] memory signers) = verifier.verify(key, _signatures);
+        require(isValid, "insufficient validators");
+        // TODO: shall use onERC721Received or similar to "withdraw"
+        lord.mintNFT(_token, _tokenID, _recipient, _data);
+        emit Settled(key, signers, true);
     }
 
     function withdrawInBatch(
