@@ -26,6 +26,7 @@ interface ITube {
 
 contract TubeRouter is Ownable {
     using SafeERC20 for IERC20;
+    event RelayFeeReceipt(address user, uint256 amount);
     struct RelayFee {
         uint256 fee;
         bool exists;
@@ -62,6 +63,7 @@ contract TubeRouter is Ownable {
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
         IERC20(_token).safeApprove(address(tube), _amount);
         tube.depositTo(_tubeID, _token, _recipient, _amount, _data);
+        emit RelayFeeReceipt(msg.sender, msg.value);
     }
 
     function depositNFTTo(
