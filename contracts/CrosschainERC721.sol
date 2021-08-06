@@ -4,7 +4,7 @@ pragma solidity 0.7.3;
 
 import "@openzeppelin/contracts/token/ERC721/ERC721Burnable.sol";
 
-contract CCERC721 is ERC721Burnable {
+contract CrosschainERC721 is ERC721Burnable {
     event MinterSet(address indexed minter);
 
     modifier onlyMinter() {

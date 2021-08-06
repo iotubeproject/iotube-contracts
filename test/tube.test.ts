@@ -67,8 +67,8 @@ describe("tube uint test", function () {
     assetRegistry = await AssetRegistry.deploy()
     await assetRegistry.deployed()
 
-    const CCFactory = await ethers.getContractFactory("CCFactory")
-    factory = await CCFactory.deploy(lord.address)
+    const CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20Factory")
+    factory = await CrosschainERC20Factory.deploy(lord.address)
     await factory.deployed()
 
     let tx = await assetRegistry.grant(owner.address)
@@ -93,15 +93,15 @@ describe("tube uint test", function () {
 
     let ret = await factory.createLocalToken(coToken.address, "name", "symbol", 6)
     let receipt = await ret.wait()
-    let event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
-    let CCERC20 = await ethers.getContractFactory("CCERC20")
-    localToken = CCERC20.attach(event.args[0])
+    let event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
+    let CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
+    localToken = CrosschainERC20.attach(event.args[0])
 
     ret = await factory.createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
-    event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
-    CCERC20 = await ethers.getContractFactory("CCERC20")
-    foreignToken = CCERC20.attach(event.args[0])
+    event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
+    CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
+    foreignToken = CrosschainERC20.attach(event.args[0])
 
     tx = await assetRegistry.addOriginalAsset(FOREIGN_CHAIN_ID, foreignToken.address);
     let retval = await tx.wait()
@@ -485,8 +485,8 @@ describe("tube integrate test", function () {
   let tubeB: Contract
 
   let coTokenA: Contract
-  let ccTokenA: Contract
-  let ccTokenB: Contract
+  let ceA: Contract
+  let ceB: Contract
 
   let ownerA: SignerWithAddress
   let ownerB: SignerWithAddress
@@ -522,10 +522,10 @@ describe("tube integrate test", function () {
     assetRegistryA = await AssetRegistry.connect(ownerA).deploy()
     await assetRegistryA.deployed()
 
-    const CCFactory = await ethers.getContractFactory("CCFactory")
-    factoryA = await CCFactory.connect(ownerA).deploy(lordA.address)
+    const CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20Factory")
+    factoryA = await CrosschainERC20Factory.connect(ownerA).deploy(lordA.address)
     await factoryA.deployed()
-    factoryB = await CCFactory.connect(ownerB).deploy(lordB.address)
+    factoryB = await CrosschainERC20Factory.connect(ownerB).deploy(lordB.address)
     await factoryB.deployed()
 
     let tx = await assetRegistryA.connect(ownerA).grant(ownerA.address)
@@ -572,20 +572,20 @@ describe("tube integrate test", function () {
 
     let ret = await factoryA.connect(ownerA).createLocalToken(coTokenA.address, "name", "symbol", 6)
     let receipt = await ret.wait()
-    let event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
-    let CCERC20 = await ethers.getContractFactory("CCERC20")
-    ccTokenA = CCERC20.attach(event.args[0])
+    let event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
+    let CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
+    ceA = CrosschainERC20.attach(event.args[0])
 
     ret = await factoryB.connect(ownerB).createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
-    event = _.find(receipt.events, (e: any) => e.event == "NewCCERC20")
-    CCERC20 = await ethers.getContractFactory("CCERC20")
-    ccTokenB = CCERC20.attach(event.args[0])
+    event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
+    CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
+    ceB = CrosschainERC20.attach(event.args[0])
 
-    tx = await assetRegistryA.connect(ownerA).addOriginalAsset(CHAIN_ID_A, ccTokenA.address)
+    tx = await assetRegistryA.connect(ownerA).addOriginalAsset(CHAIN_ID_A, ceA.address)
     await tx.wait()
-    const assetID = await assetRegistryA.assetID(CHAIN_ID_A, ccTokenA.address);
-    await assetRegistryA.addAssetOnTube(assetID, CHAIN_ID_B, ccTokenB.address)
+    const assetID = await assetRegistryA.assetID(CHAIN_ID_A, ceA.address);
+    await assetRegistryA.addAssetOnTube(assetID, CHAIN_ID_B, ceB.address)
   })
 
   it("transfer", async function () {
@@ -593,22 +593,22 @@ describe("tube integrate test", function () {
     let tx = await coTokenA.connect(ownerA).mint(holder1.address, amount)
     await tx.wait()
 
-    tx = await coTokenA.connect(holder1).approve(ccTokenA.address, amount)
+    tx = await coTokenA.connect(holder1).approve(ceA.address, amount)
     await tx.wait()
 
-    await expect(ccTokenA.connect(holder1).deposit(amount))
+    await expect(ceA.connect(holder1).deposit(amount))
       .to.emit(coTokenA, "Transfer")
-      .withArgs(holder1.address, ccTokenA.address, amount)
-      .to.emit(ccTokenA, "Transfer")
+      .withArgs(holder1.address, ceA.address, amount)
+      .to.emit(ceA, "Transfer")
       .withArgs(ZERO_ADDRESS, holder1.address, amount)
 
-    await expect(ccTokenA.connect(holder1).approve(lordA.address, amount))
-      .to.emit(ccTokenA, "Approval")
+    await expect(ceA.connect(holder1).approve(lordA.address, amount))
+      .to.emit(ceA, "Approval")
       .withArgs(holder1.address, lordA.address, amount)
 
-    await expect(tubeA.connect(holder1).deposit(CHAIN_ID_A, ccTokenA.address, amount, "0x"))
+    await expect(tubeA.connect(holder1).deposit(CHAIN_ID_A, ceA.address, amount, "0x"))
       .to.emit(tubeA, "Receipt")
-      .withArgs(CHAIN_ID_A, ccTokenA.address, 1, holder1.address, holder1.address, amount, "0x", 0)
+      .withArgs(CHAIN_ID_A, ceA.address, 1, holder1.address, holder1.address, amount, "0x", 0)
 
     await expect(verifierB.addAll([VALIDATOR_ADDRESSES[0]]))
       .to.emit(verifierB, "ValidatorAdded")
@@ -622,26 +622,26 @@ describe("tube integrate test", function () {
       .to.emit(verifierB, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[2])
 
-    let key = await tubeB.genKey(CHAIN_ID_A, 1, ccTokenB.address, holder1.address, amount, "0x")
+    let key = await tubeB.genKey(CHAIN_ID_A, 1, ceB.address, holder1.address, amount, "0x")
 
     let s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
     let s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
     let s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
     let signature = "0x" + s1 + s2 + s3
 
-    await expect(tubeB.connect(holder1).withdraw(CHAIN_ID_A, 1, ccTokenB.address, holder1.address, amount, "0x", signature))
+    await expect(tubeB.connect(holder1).withdraw(CHAIN_ID_A, 1, ceB.address, holder1.address, amount, "0x", signature))
       .to.emit(tubeB, "Settled")
       .withArgs(key, VALIDATOR_ADDRESSES, true)
 
-    expect(await ccTokenB.balanceOf(holder1.address)).to.equal(amount)
+    expect(await ceB.balanceOf(holder1.address)).to.equal(amount)
 
-    await expect(ccTokenB.connect(holder1).approve(lordB.address, amount))
-      .to.emit(ccTokenB, "Approval")
+    await expect(ceB.connect(holder1).approve(lordB.address, amount))
+      .to.emit(ceB, "Approval")
       .withArgs(holder1.address, lordB.address, amount)
 
-    await expect(tubeB.connect(holder1).deposit(CHAIN_ID_B, ccTokenB.address, amount, "0x"))
+    await expect(tubeB.connect(holder1).deposit(CHAIN_ID_B, ceB.address, amount, "0x"))
       .to.emit(tubeB, "Receipt")
-      .withArgs(CHAIN_ID_B, ccTokenB.address, 1, holder1.address, holder1.address, amount, "0x", 0)
+      .withArgs(CHAIN_ID_B, ceB.address, 1, holder1.address, holder1.address, amount, "0x", 0)
 
     await expect(verifierA.addAll([VALIDATOR_ADDRESSES[0]]))
       .to.emit(verifierA, "ValidatorAdded")
@@ -655,22 +655,22 @@ describe("tube integrate test", function () {
       .to.emit(verifierA, "ValidatorAdded")
       .withArgs(VALIDATOR_ADDRESSES[2])
 
-    key = await tubeA.genKey(CHAIN_ID_B, 1, ccTokenA.address, holder1.address, amount, "0x")
+    key = await tubeA.genKey(CHAIN_ID_B, 1, ceA.address, holder1.address, amount, "0x")
 
     s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
     s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
     s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
     signature = "0x" + s1 + s2 + s3
 
-    await expect(tubeA.connect(holder1).withdraw(CHAIN_ID_B, 1, ccTokenA.address, holder1.address, amount, "0x", signature))
+    await expect(tubeA.connect(holder1).withdraw(CHAIN_ID_B, 1, ceA.address, holder1.address, amount, "0x", signature))
       .to.emit(tubeA, "Settled")
       .withArgs(key, VALIDATOR_ADDRESSES, true)
 
-    expect(await ccTokenA.balanceOf(holder1.address)).to.equal(amount)
+    expect(await ceA.balanceOf(holder1.address)).to.equal(amount)
 
-    await expect(ccTokenA.connect(holder1).withdraw(amount))
+    await expect(ceA.connect(holder1).withdraw(amount))
       .to.emit(coTokenA, "Transfer")
-      .withArgs(ccTokenA.address, holder1.address, amount)
+      .withArgs(ceA.address, holder1.address, amount)
 
     expect(await coTokenA.balanceOf(holder1.address)).to.equal(amount)
   })
