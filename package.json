@@ -35,8 +35,8 @@
     "typescript": "^4.2.4"
   },
   "scripts": {
-    "lint": "npm run lint:ts && npm run lint:sol",
-    "lint:fix": "npm run lint:fix:ts && npm run lint:fix:sol",
+    "lint": "npm run lint:sol",
+    "lint:fix": "npm run lint:fix:sol",
     "lint:ts": "eslint --ext ts && prettier --list-different test/**/*.ts",
     "lint:fix:ts": "eslint --ext ts --fix && prettier --write test/**/*.ts",
     "lint:sol": "solhint 'contracts/**/*.sol'",
