@@ -1,7 +1,7 @@
-# Crosschaind contracts
+# iotube contracts
 
-[![Lint](https://github.com/crosschained-io/crosschained-contracts/actions/workflows/lint.yml/badge.svg)](https://github.com/crosschained-io/crosschained-contracts/actions/workflows/lint.yml)
-[![Tests](https://github.com/crosschained-io/crosschained-contracts/actions/workflows/tests.yml/badge.svg)](https://github.com/crosschained-io/crosschained-contracts/actions/workflows/tests.yml)
+[![Lint](https://github.com/iotubeproject/iotube-contracts/actions/workflows/lint.yml/badge.svg)](https://github.com/iotubeproject/iotube-contracts/actions/workflows/lint.yml)
+[![Tests](https://github.com/iotubeproject/iotube-contracts/actions/workflows/tests.yml/badge.svg)](https://github.com/iotubeproject/iotube-contracts/actions/workflows/tests.yml)
 
 ## Develop
 
