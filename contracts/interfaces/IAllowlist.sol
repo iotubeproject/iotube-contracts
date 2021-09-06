@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.3;
+pragma solidity 0.7.6;
 
 interface IAllowlist {
     function getPoolAccountLimit(address poolAddress) external view returns (uint256);

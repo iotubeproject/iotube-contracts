@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.3;
+pragma solidity 0.7.6;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
@@ -22,6 +22,12 @@ interface ITube {
         address _to,
         bytes memory _data
     ) external;
+
+    function fees(uint256 _tubeID) external view returns (uint256);
+
+    function lord() external view returns (address);
+
+    function tubeToken() external view returns (IERC20);
 }
 
 contract TubeRouter is Ownable {
@@ -32,10 +38,12 @@ contract TubeRouter is Ownable {
         bool exists;
     }
     mapping(uint256 => RelayFee) private relayFees;
+    address private lord;
     ITube public tube;
 
     constructor(ITube _tube) public {
         tube = _tube;
+        lord = _tube.lord();
     }
 
     function setRelayFee(uint256 _tubeID, uint256 _fee) public onlyOwner {
@@ -60,8 +68,14 @@ contract TubeRouter is Ownable {
     ) public payable {
         uint256 fee = relayFee(_tubeID);
         require(msg.value >= fee, "insufficient relay fee");
+        uint256 tubeFee = tube.fees(_tubeID);
+        if (tubeFee > 0) {
+            IERC20 tubeToken = tube.tubeToken();
+            tubeToken.safeTransferFrom(msg.sender, address(this), tubeFee);
+            tubeToken.safeApprove(address(tube), _amount);
+        }
         IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(_token).safeApprove(address(tube), _amount);
+        IERC20(_token).safeApprove(lord, _amount);
         tube.depositTo(_tubeID, _token, _recipient, _amount, _data);
         emit RelayFeeReceipt(msg.sender, msg.value);
     }
