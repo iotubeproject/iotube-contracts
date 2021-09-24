@@ -226,37 +226,6 @@ contract Tube is Ownable, Pausable {
         emit Settled(key, signers, true);
     }
 
-    function withdrawInBatch(
-        uint256[] memory _srcTubeIDs,
-        uint256[] memory _txIdxs,
-        address[] memory _tokens,
-        address[] memory _recipients,
-        uint256[] memory _amounts,
-        bytes memory _signatures
-    ) public whenNotPaused {
-        uint256 cnt = _amounts.length;
-        require(cnt > 0, "invalid array length");
-        require(_signatures.length % 65 == 0, "invalid signature length");
-        require(
-            _srcTubeIDs.length == cnt && _txIdxs.length == cnt && _tokens.length == cnt && _recipients.length == cnt,
-            "invalid parameters"
-        );
-
-        bytes32[] memory keys = new bytes32[](cnt);
-        for (uint256 i = 0; i < cnt; i++) {
-            require(_amounts[i] != 0, "amount is 0");
-            require(_recipients[i] != address(0), "invalid recipient");
-            keys[i] = genKey(_srcTubeIDs[i], _txIdxs[i], _tokens[i], _recipients[i], _amounts[i], "");
-            ledger.record(keys[i]);
-        }
-        (bool isValid, address[] memory signers) = verifier.verify(concatKeys(keys), _signatures);
-        require(isValid, "insufficient validators");
-        for (uint256 i = 0; i < cnt; i++) {
-            lord.mint(_tokens[i], _recipients[i], _amounts[i]);
-            emit Settled(keys[i], signers, true);
-        }
-    }
-
     function withdrawCoin(address payable _to) external onlyOwner {
         _to.transfer(address(this).balance);
     }
