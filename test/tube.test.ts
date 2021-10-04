@@ -339,6 +339,7 @@ describe("tube uint test", function () {
     })
   })
 
+  /*
   describe("withdrawInBatch", function () {
     beforeEach(async function () {
       await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
@@ -465,6 +466,7 @@ describe("tube uint test", function () {
       expect(await foreignToken.balanceOf(holder2.address)).to.equal(200)
     })
   })
+  */
 })
 
 describe("tube integrate test", function () {

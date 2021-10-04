@@ -8,8 +8,10 @@ contract Verifier is Ownable {
     event ValidatorAdded(address indexed validator);
     event ValidatorRemoved(address indexed validator);
 
+    uint8 public constant VALIDATOR_LIMIT = 50;
+
     address[] public validators;
-    mapping(address => uint256) private validatorIndexes;
+    mapping(address => uint8) private validatorIndexes;
 
     function size() public view returns (uint256) {
         return validators.length;
@@ -27,26 +29,31 @@ contract Verifier is Ownable {
     }
 
     function addAll(address[] memory _validators) public onlyOwner {
+        require(validators.length + _validators.length < VALIDATOR_LIMIT, "hit max validator limit");
+        address validator;
         for (uint256 i = 0; i < _validators.length; i++) {
-            address validator = _validators[i];
+            validator = _validators[i];
             require(validator != address(0), "invalid validator");
             if (validatorIndexes[validator] != 0) {
                 continue;
             }
             validators.push(validator);
-            validatorIndexes[validator] = validators.length;
+            validatorIndexes[validator] = uint8(validators.length);
             emit ValidatorAdded(validator);
         }
     }
 
     function removeAll(address[] memory _validators) public onlyOwner {
+        address validator;
+        address last;
+        uint8 index;
         for (uint256 i = 0; i < _validators.length; i++) {
-            address validator = _validators[i];
-            uint256 index = validatorIndexes[validator];
+            validator = _validators[i];
+            index = validatorIndexes[validator];
             if (index == 0) {
                 continue;
             }
-            address last = validators[validators.length - 1];
+            last = validators[validators.length - 1];
             validators[index - 1] = last;
             validatorIndexes[last] = index;
             validators.pop();
@@ -61,13 +68,16 @@ contract Verifier is Ownable {
         returns (bool isValid_, address[] memory validators_)
     {
         uint256 numOfSignatures = _signatures.length / 65;
+        bool[VALIDATOR_LIMIT] memory seen;
+        address validator;
+        uint8 index;
         validators_ = new address[](numOfSignatures);
         for (uint256 i = 0; i < numOfSignatures; i++) {
-            address validator = recover(_key, _signatures, i * 65);
-            require(validatorIndexes[validator] != 0, "invalid validator");
-            for (uint256 j = 0; j < i; j++) {
-                require(validator != validators_[j], "duplicate validator");
-            }
+            validator = recover(_key, _signatures, i * 65);
+            index = validatorIndexes[validator];
+            require(index != 0, "invalid validator");
+            require(!seen[index], "duplicate validator");
+            seen[index] = true;
             validators_[i] = validator;
         }
         isValid_ = validators_.length * 3 > validators.length * 2;
