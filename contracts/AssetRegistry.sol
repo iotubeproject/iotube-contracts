@@ -100,7 +100,7 @@ contract AssetRegistry is Ownable {
 
     function activateAsset(uint256 _assetID, uint256 _tubeID) public onlyOperator {
         require(_assetID > 0 && _assetID <= originalAssets.length, "invalid asset id");
-        Asset storage oa = originalAssets[_assetID];
+        Asset storage oa = originalAssets[_assetID - 1];
         if (_tubeID == 0 || oa.tubeID == _tubeID) {
             if (oa.active == false) {
                 oa.active = true;
@@ -117,7 +117,7 @@ contract AssetRegistry is Ownable {
 
     function deactivateAsset(uint256 _assetID, uint256 _tubeID) public onlyOperator {
         require(_assetID > 0 && _assetID <= originalAssets.length, "invalid asset id");
-        Asset storage oa = originalAssets[_assetID];
+        Asset storage oa = originalAssets[_assetID - 1];
         if (_tubeID == 0 || oa.tubeID == _tubeID) {
             if (oa.active == true) {
                 oa.active = false;
