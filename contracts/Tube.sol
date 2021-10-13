@@ -68,7 +68,7 @@ contract Tube is Ownable, Pausable {
         safe = _safe;
     }
 
-    function upgrade(address _newTube) public onlyOwner {
+    function upgrade(address _newTube) public whenPaused onlyOwner {
         if (ledger.owner() == address(this)) {
             ledger.transferOwnership(_newTube);
         }
@@ -89,7 +89,7 @@ contract Tube is Ownable, Pausable {
         _unpause();
     }
 
-    function setFee(uint256 _tubeID, uint256 _fee) public onlyOwner {
+    function setFee(uint256 _tubeID, uint256 _fee) public whenPaused onlyOwner {
         fees[_tubeID] = _fee;
     }
 

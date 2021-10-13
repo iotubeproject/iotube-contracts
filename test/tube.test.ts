@@ -140,8 +140,11 @@ describe("tube uint test", function () {
     })
 
     it("without fee", async function () {
+      let tx = await tube.pause()
+      await tx.wait()
       await tube.setFee(CHAIN_ID, 1000000)
-
+      tx = await tube.unpause()
+      await tx.wait()
       await expect(tube.deposit(CHAIN_ID, localToken.address, 1000, "0x")).to.be.revertedWith(
         "transfer amount exceeds balance",
       )
@@ -171,7 +174,11 @@ describe("tube uint test", function () {
 
     it("success with fee", async function () {
       const fee = 1000000
-      const tx = await tube.setFee(CHAIN_ID, fee)
+      let tx = await tube.pause()
+      await tx.wait()
+      tx = await tube.setFee(CHAIN_ID, fee)
+      await tx.wait()
+      tx = await tube.unpause()
       await tx.wait()
 
       await expect(coToken.mint(owner.address, 1000000))
