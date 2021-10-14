@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
+import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
 import "./Ledger.sol";
 import "./Lord.sol";
 
@@ -16,7 +17,7 @@ interface IVerifier {
         returns (bool isValid_, address[] memory validators_);
 }
 
-contract Tube is Ownable, Pausable {
+contract Tube is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     event Settled(bytes32 indexed key, address[] validators, bool success);
@@ -59,7 +60,7 @@ contract Tube is Ownable, Pausable {
         IVerifier _verifier,
         IERC20 _tubeToken,
         address _safe
-    ) public {
+    ) public ReentrancyGuard() {
         tubeID = _tubeID;
         ledger = _ledger;
         lord = _lord;
@@ -99,7 +100,7 @@ contract Tube is Ownable, Pausable {
         address _to,
         uint256 _amount,
         bytes memory _data
-    ) public whenNotPaused {
+    ) public nonReentrant whenNotPaused {
         require(_to != address(0), "invalid recipient");
         require(_amount > 0, "invalid amount");
         uint256 fee = fees[_tubeID];
@@ -117,7 +118,7 @@ contract Tube is Ownable, Pausable {
         uint256 _tokenID,
         address _to,
         bytes memory _data
-    ) public whenNotPaused {
+    ) public nonReentrant whenNotPaused {
         require(_to != address(0), "invalid recipient");
         uint256 fee = fees[_tubeID];
         if (fee > 0) {
@@ -184,7 +185,7 @@ contract Tube is Ownable, Pausable {
         uint256 _amount,
         bytes memory _data,
         bytes memory _signatures
-    ) public whenNotPaused {
+    ) public nonReentrant whenNotPaused {
         require(_amount != 0, "amount is 0");
         require(_recipient != address(0), "invalid recipient");
         require(_signatures.length % 65 == 0, "invalid signature length");
@@ -192,16 +193,10 @@ contract Tube is Ownable, Pausable {
         ledger.record(key);
         (bool isValid, address[] memory signers) = verifier.verify(key, _signatures);
         require(isValid, "insufficient validators");
+        lord.mint(_token, _recipient, _amount);
         bool success = true;
-        if (_data.length > 0) {
-            lord.mint(_token, address(this), _amount);
-            IERC20(_token).safeApprove(_recipient, _amount);
+        if (_data.length > 0 && _recipient != address(lord) && _recipient != address(ledger) && _recipient != address(tubeToken)) {
             (success, ) = _recipient.call(_data);
-            if (!success) {
-                IERC20(_token).safeDecreaseAllowance(_recipient, _amount);
-            }
-        } else {
-            lord.mint(_token, _recipient, _amount);
         }
         emit Settled(key, signers, success);
     }
@@ -214,7 +209,7 @@ contract Tube is Ownable, Pausable {
         address _recipient,
         bytes memory _data,
         bytes memory _signatures
-    ) public whenNotPaused {
+    ) public nonReentrant whenNotPaused {
         require(_recipient != address(0), "invalid recipient");
         require(_signatures.length % 65 == 0, "invalid signature length");
         bytes32 key = genKeyForNFT(_srcTubeID, _txIdx, _token, _tokenID, _recipient, _data);

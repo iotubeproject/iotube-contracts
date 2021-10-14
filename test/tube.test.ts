@@ -47,9 +47,10 @@ describe("tube uint test", function () {
   let holder3: SignerWithAddress
   let attacker: SignerWithAddress
   let treasure: SignerWithAddress
+  let safe: SignerWithAddress
 
   beforeEach(async function () {
-    [owner, holder1, holder2, holder3, attacker, treasure] = await ethers.getSigners()
+    [owner, holder1, holder2, holder3, attacker, treasure, safe] = await ethers.getSigners()
 
     const Lord = await ethers.getContractFactory("Lord")
     lord = await Lord.deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)
@@ -290,7 +291,7 @@ describe("tube uint test", function () {
   })
 
   describe("withdraw with data", function () {
-    let safe: Contract;
+    let safeRouter: Contract;
     beforeEach(async function () {
       await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
         .to.emit(verifier, "ValidatorAdded")
@@ -305,44 +306,45 @@ describe("tube uint test", function () {
         .withArgs(VALIDATOR_ADDRESSES[2])
 
       const MockSafe = await ethers.getContractFactory("MockSafe");
-      safe = await MockSafe.deploy();
-      await safe.deployed();
+      safeRouter = await MockSafe.deploy(safe.address);
+      await safeRouter.deployed();
     })
 
     it("fail", async function () {
       const amount = 999;
       const bytecode = "0x8340f549" + foreignToken.address.substring(2).padStart(64, "0") + holder1.address.substring(2).padStart(64, "0") + amount.toString(16).padStart(64, "0")
-      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode)
+      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, safeRouter.address, amount, bytecode)
 
       const s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
       const s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
       const s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
       const signature = "0x" + s1 + s2 + s3
 
-      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode, signature))
+      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, safeRouter.address, amount, bytecode, signature))
         .to.emit(tube, "Settled")
         .withArgs(key, VALIDATOR_ADDRESSES, false)
 
+      expect(await foreignToken.balanceOf(safeRouter.address)).to.equal(amount)
       expect(await foreignToken.balanceOf(safe.address)).to.equal(0)
-      expect(await foreignToken.balanceOf(tube.address)).to.equal(amount)
     })
 
     it("success", async function () {
       const amount = 1000;
       const bytecode = "0x8340f549" + foreignToken.address.substring(2).padStart(64, "0") + holder1.address.substring(2).padStart(64, "0") + amount.toString(16).padStart(64, "0")
-      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode)
+      const key = await tube.genKey(CHAIN_ID, 1, foreignToken.address, safeRouter.address, amount, bytecode)
 
       const s1 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[0])
       const s2 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[1])
       const s3 = sign(key.slice(2), VALIDATOR_PRIVATE_KEYS[2])
       const signature = "0x" + s1 + s2 + s3
 
-      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, safe.address, amount, bytecode, signature))
+      await expect(tube.withdraw(CHAIN_ID, 1, foreignToken.address, safeRouter.address, amount, bytecode, signature))
         .to.emit(tube, "Settled")
         .withArgs(key, VALIDATOR_ADDRESSES, true)
 
+      expect(await foreignToken.balanceOf(safeRouter.address)).to.equal(0)
       expect(await foreignToken.balanceOf(safe.address)).to.equal(amount)
-      expect(await safe.points(foreignToken.address, holder1.address)).to.equal(amount)
+      expect(await safeRouter.points(foreignToken.address, holder1.address)).to.equal(amount)
     })
   })
 
