@@ -89,6 +89,15 @@ describe("tube uint test", function () {
     tx = await ledger.transferOwnership(tube.address)
     await tx.wait()
 
+    tx = await tube.pause()
+    await tx.wait()
+
+    tx = await tube.acceptOwnerships()
+    await tx.wait()
+
+    tx = await tube.unpause()
+    await tx.wait()
+
     coToken = await MockToken.deploy("name", "symbol", 6)
     await coToken.deployed()
 
@@ -576,6 +585,19 @@ describe("tube integrate test", function () {
     tx = await ledgerA.connect(ownerA).transferOwnership(tubeA.address)
     await tx.wait()
     tx = await ledgerB.connect(ownerB).transferOwnership(tubeB.address)
+    await tx.wait()
+
+    tx = await tubeA.connect(ownerA).pause()
+    await tx.wait()
+    tx = await tubeA.connect(ownerA).acceptOwnerships()
+    await tx.wait()
+    tx = await tubeA.connect(ownerA).unpause()
+    await tx.wait()
+    tx = await tubeB.connect(ownerB).pause()
+    await tx.wait()
+    tx = await tubeB.connect(ownerB).acceptOwnerships()
+    await tx.wait()
+    tx = await tubeB.connect(ownerB).unpause()
     await tx.wait()
 
     coTokenA = await MockToken.connect(ownerA).deploy("name", "symbol", 6)

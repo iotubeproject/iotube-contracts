@@ -2,9 +2,9 @@
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Owned.sol";
 
-contract Ledger is Ownable {
+contract Ledger is Owned {
     mapping(bytes32 => uint256) public records;
 
     function record(bytes32 id) public onlyOwner {

@@ -7,8 +7,24 @@ import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
-import "./Ledger.sol";
-import "./Lord.sol";
+
+interface ILedger {
+    function owner() external view returns (address);
+    function transferOwnership(address _newOwner) external;
+    function acceptOwnership() external;
+    function get(bytes32 _key) external view returns (uint256);
+    function record(bytes32 _key) external;
+}
+
+interface ILord {
+    function owner() external view returns (address);
+    function transferOwnership(address _newOwner) external;
+    function acceptOwnership() external;
+    function burn(address _token, address _owner, uint256 _amount) external;
+    function burnNFT(address _token, uint256 _amount) external;
+    function mint(address _token, address _recipient, uint256 _amount) external;
+    function mintNFT(address _token, uint256 _tokenID, address _recipient, bytes calldata _data) external;
+}
 
 interface IVerifier {
     function verify(bytes32 _key, bytes memory _signatures)
@@ -45,8 +61,8 @@ contract Tube is Ownable, Pausable, ReentrancyGuard {
     );
 
     uint256 public tubeID;
-    Ledger public ledger;
-    Lord public lord;
+    ILedger public ledger;
+    ILord public lord;
     IVerifier public verifier;
     IERC20 public tubeToken;
     address public safe;
@@ -55,8 +71,8 @@ contract Tube is Ownable, Pausable, ReentrancyGuard {
 
     constructor(
         uint256 _tubeID,
-        Ledger _ledger,
-        Lord _lord,
+        ILedger _ledger,
+        ILord _lord,
         IVerifier _verifier,
         IERC20 _tubeToken,
         address _safe
@@ -75,6 +91,15 @@ contract Tube is Ownable, Pausable, ReentrancyGuard {
         }
         if (lord.owner() == address(this)) {
             lord.transferOwnership(_newTube);
+        }
+    }
+
+    function acceptOwnerships() public whenPaused onlyOwner {
+        if (ledger.owner() != address(this)) {
+            ledger.acceptOwnership();
+        }
+        if (lord.owner() != address(this)) {
+            lord.acceptOwnership();
         }
     }
 
@@ -124,7 +149,7 @@ contract Tube is Ownable, Pausable, ReentrancyGuard {
         if (fee > 0) {
             tubeToken.safeTransferFrom(msg.sender, safe, fee);
         }
-        IERC721Mintable(_token).burn(_tokenID);
+        lord.burnNFT(_token, _tokenID);
         uint256 txIdx = ++counts[_tubeID][_token];
         emit NFTReceipt(_tubeID, _token, _tokenID, txIdx, msg.sender, _to, _data, fee);
     }

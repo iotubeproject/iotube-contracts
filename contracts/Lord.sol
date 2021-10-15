@@ -2,7 +2,7 @@
 
 pragma solidity 0.7.6;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "./Owned.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 interface IToken {
@@ -47,7 +47,7 @@ interface IMinter {
     function owner() external view returns (address);
 }
 
-contract Lord is Ownable {
+contract Lord is Owned {
     using Address for address;
 
     IAllowlist public standardTokenList;
@@ -104,6 +104,13 @@ contract Lord is Ownable {
             require(minterPool.mint(_token, _recipient, _amount), "proxy token mint failed");
         }
         _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).mint.selector, _recipient, _amount));
+    }
+
+    function burnNFT(
+        address _token,
+        uint256 _tokenID
+    ) public onlyOwner {
+        IERC721Mintable(_token).burn(_tokenID);
     }
 
     function mintNFT(
