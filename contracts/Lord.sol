@@ -125,7 +125,7 @@ contract Lord is Owned {
     function upgrade(address _newLord) public onlyOwner {
         if (minterPool.owner() == address(this)) {
             _callOptionalReturn(
-                address(tokenSafe),
+                address(minterPool),
                 abi.encodeWithSelector(minterPool.transferOwnership.selector, _newLord)
             );
         }
