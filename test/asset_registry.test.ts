@@ -2,17 +2,14 @@ import _, { flatMap } from "lodash"
 import { ethers } from "hardhat"
 import { BigNumber } from "ethers"
 import { expect } from "chai"
-import { Contract } from "@ethersproject/contracts"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { ecsign, toBuffer, setLengthLeft } from "ethereumjs-util"
-
-const privateKeyToAddress = require("ethereum-private-key-to-address")
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+import { AssetRegistryV2 } from "../types/AssetRegistryV2"
+import { MockToken } from "../types/MockToken"
 
 describe("asset registry unit test", () => {
-    let registry: Contract;
-    let asset1: Contract;
-    let asset2: Contract;
+    let registry: AssetRegistryV2;
+    let asset1: MockToken;
+    let asset2: MockToken;
     let owner: SignerWithAddress;
     let hacker: SignerWithAddress;
     let operator: SignerWithAddress;
@@ -21,12 +18,12 @@ describe("asset registry unit test", () => {
     beforeEach(async () => {
         [owner, hacker, operator, operator2] = await ethers.getSigners();
         const RegistryContract = await ethers.getContractFactory("AssetRegistryV2");
-        registry = await RegistryContract.connect(owner).deploy();
+        registry = await RegistryContract.connect(owner).deploy() as AssetRegistryV2;
         await registry.deployed();
         const MockToken = await ethers.getContractFactory("MockToken")
-        asset1 = await MockToken.deploy("asset1", "symbol", 6)
+        asset1 = await MockToken.deploy("asset1", "symbol", 6) as MockToken
         await asset1.deployed()
-        asset2 = await MockToken.deploy("asset2", "symbol", 6)
+        asset2 = await MockToken.deploy("asset2", "symbol", 6) as MockToken
         await asset2.deployed()
     });
     describe("owner functions", () => {
@@ -80,7 +77,7 @@ describe("asset registry unit test", () => {
             });
             it("invalid parameters", async () => {
                 await expect(registry.connect(operator).newAsset(0, asset1.address)).to.be.revertedWith("invalid tube id");
-                await expect(registry.connect(operator).newAsset(tubeIDs[0], ZERO_ADDRESS)).to.be.revertedWith("invalid asset address");
+                await expect(registry.connect(operator).newAsset(tubeIDs[0], ethers.constants.AddressZero)).to.be.revertedWith("invalid asset address");
             });
             describe("add asset 1", () => {
                 beforeEach(async () => {

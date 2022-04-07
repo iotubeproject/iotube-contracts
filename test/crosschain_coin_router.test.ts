@@ -1,17 +1,19 @@
 import _ from "lodash";
 import { ethers } from "hardhat";
 import { expect } from "chai";
-import { Contract } from "@ethersproject/contracts";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
-import { ecsign, toBuffer, setLengthLeft } from "ethereumjs-util";
+
+import { WIOTX } from "../types/WIOTX";
+import { CrosschainERC20 } from "../types/CrosschainERC20";
+import { CrosschainCoinRouter } from "../types/CrosschainCoinRouter";
 
 const privateKeyToAddress = require("ethereum-private-key-to-address");
 
 describe("router test", function () {
   const amount = 123456789;
-  let wrappedCoin: Contract;
-  let cerc20: Contract;
-  let router: Contract;
+  let wrappedCoin: WIOTX;
+  let cerc20: CrosschainERC20;
+  let router: CrosschainCoinRouter;
 
   let holder1: SignerWithAddress;
   let holder2: SignerWithAddress;
@@ -22,13 +24,18 @@ describe("router test", function () {
     [holder1, holder2, holder3, attacker] = await ethers.getSigners();
 
     const WIOTX = await ethers.getContractFactory("WIOTX");
-    wrappedCoin = await WIOTX.deploy();
+    wrappedCoin = await WIOTX.deploy() as WIOTX;
 
-    const CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20");
-    cerc20 = await CrosschainERC20.deploy(wrappedCoin.address, "0x0000000000000000000000000000000000000000", "crosschain-iotx", "ciotx", 18);
+    const crosschainERC20 = await ethers.getContractFactory("CrosschainERC20");
+    cerc20 = await crosschainERC20.deploy(
+      wrappedCoin.address,
+      ethers.constants.AddressZero,
+      "crosschain-iotx",
+      "ciotx",
+    18) as CrosschainERC20;
 
-    const CrosschainCoinRouter = await ethers.getContractFactory("CrosschainCoinRouter");
-    router = await CrosschainCoinRouter.deploy(cerc20.address);
+    const crosschainCoinRouter = await ethers.getContractFactory("CrosschainCoinRouter");
+    router = await crosschainCoinRouter.deploy(cerc20.address) as CrosschainCoinRouter;
     await wrappedCoin.connect(holder1).approve(router.address, "1000000000000000000000000000");
     await cerc20.connect(holder1).approve(router.address, "1000000000000000000000000000");
   })
