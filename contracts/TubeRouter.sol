@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
 
 interface ITube {
@@ -41,7 +41,7 @@ contract TubeRouter is Ownable {
     address private lord;
     ITube public tube;
 
-    constructor(ITube _tube) public {
+    constructor(ITube _tube) {
         tube = _tube;
         lord = _tube.lord();
     }

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/math/SafeMath.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
-import "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "./OwnerPausable.sol";
 import "./SwapUtils.sol";
 import "./MathUtils.sol";
@@ -104,7 +104,7 @@ contract Swap is OwnerPausable, ReentrancyGuard {
         uint256 _depositFee,
         uint256 _withdrawFee,
         address _devaddr
-    ) public OwnerPausable() ReentrancyGuard() {
+    ) OwnerPausable() ReentrancyGuard() {
         // Check _pooledTokens and precisions parameter
         require(_pooledTokens.length > 1, "_pooledTokens.length <= 1");
         require(_pooledTokens.length <= 32, "_pooledTokens.length > 32");

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
 import "../Owned.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
@@ -44,7 +44,7 @@ contract LordV2 is Owned {
     constructor(
         IAllowlist _proxyTokenList,
         IMinter _minterPool
-    ) public {
+    ) {
         proxyTokenList = _proxyTokenList;
         minterPool = _minterPool;
     }
