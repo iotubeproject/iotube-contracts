@@ -2,8 +2,10 @@
 
 pragma solidity >=0.8.0;
 
-import "../Owned.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
+
+import "./OwnedUpgradeable.sol";
 
 interface IToken {
     function mint(address recipient, uint256 amount) external;
@@ -35,16 +37,17 @@ interface IMinter {
     function owner() external view returns (address);
 }
 
-contract LordV2 is Owned {
+contract LordV2 is Initializable, OwnedUpgradeable {
     using Address for address;
 
     IAllowlist public proxyTokenList;
     IMinter public minterPool;
 
-    constructor(
+    function initialize(
         IAllowlist _proxyTokenList,
         IMinter _minterPool
-    ) {
+    ) public initializer {
+        __Owned_init();
         proxyTokenList = _proxyTokenList;
         minterPool = _minterPool;
     }
@@ -70,6 +73,7 @@ contract LordV2 is Owned {
         address _recipient,
         uint256 _amount
     ) public onlyOwner {
+        // TODO usage
         if (address(proxyTokenList) != address(0) && proxyTokenList.isAllowed(_token)) {
             require(minterPool.mint(_token, _recipient, _amount), "proxy token mint failed");
         }
@@ -77,6 +81,7 @@ contract LordV2 is Owned {
     }
 
     function upgrade(address _newLord) public onlyOwner {
+        // TODO remove
         if (minterPool.owner() == address(this)) {
             _callOptionalReturn(
                 address(minterPool),

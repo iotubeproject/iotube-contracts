@@ -6,6 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 
 contract TubeToken is ERC20 {
     constructor() ERC20("Tube Token", "TT") {
-        _mint(msg.sender, 10000000000000000000000000000);
+        _mint(msg.sender, 10_000_000_000 * 10**18);
     }
 }
