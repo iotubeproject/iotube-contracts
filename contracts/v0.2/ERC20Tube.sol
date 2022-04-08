@@ -173,7 +173,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         }
     }
 
-    function setLord(address _lord) external onlyOwner {
+    function setLord(ILord _lord) external onlyOwner {
         lord = _lord;
     }
 }
