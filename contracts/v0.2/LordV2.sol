@@ -11,7 +11,7 @@ interface IERC20Mintable {
     function mint(address recipient, uint256 amount) external;
 }
 
-contract LordV2 is is Initializable, OwnedUpgradeable {
+contract LordV2 is Initializable, OwnedUpgradeable {
     event MinterAdded(address indexed minter, uint256 effectiveBlock);
     event MinterRemoved(address indexed minter);
 
