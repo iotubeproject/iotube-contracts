@@ -2,22 +2,26 @@
 
 pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
+
+import "./OwnedUpgradeable.sol";
 
 interface IERC20Mintable {
     function mint(address recipient, uint256 amount) external;
 }
 
-contract LordV2 is Ownable {
+contract LordV2 is is Initializable, OwnedUpgradeable {
     event MinterAdded(address indexed minter, uint256 effectiveBlock);
     event MinterRemoved(address indexed minter);
 
     mapping(address => uint256) public minters;
     mapping(bytes32 => uint256) public records;
 
-    uint256 immutable public waitingBlocks;
-
-    constructor(uint256 _waitingBlocks) {
+    uint256 public waitingBlocks;
+    
+    function initialize(uint256 _waitingBlocks) public initializer {
+        __Owned_init();
         waitingBlocks = _waitingBlocks;
     }
 
