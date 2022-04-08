@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/math/SafeMath.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "./interfaces/ISwap.sol";
 
 /**
@@ -18,6 +18,7 @@ contract LPToken is ERC20Burnable, Ownable {
     // Address of the swap contract that owns this LP token. When a user adds liquidity to the swap contract,
     // they receive a proportionate amount of this LPToken.
     ISwap public immutable swap;
+    uint8 private _decimals;
 
     /**
      * @notice Deploys LPToken contract with given name, symbol, and decimals
@@ -30,9 +31,13 @@ contract LPToken is ERC20Burnable, Ownable {
         string memory name_,
         string memory symbol_,
         uint8 decimals_
-    ) public ERC20(name_, symbol_) {
-        _setupDecimals(decimals_);
+    ) ERC20(name_, symbol_) {
+        _decimals = decimals_;
         swap = ISwap(_msgSender());
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return _decimals;
     }
 
     /**

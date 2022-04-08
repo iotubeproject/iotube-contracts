@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/token/ERC20/ERC20Burnable.sol";
-import "@openzeppelin/contracts/token/ERC20/SafeERC20.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 contract CrosschainERC20 is ERC20Burnable {
     using SafeERC20 for ERC20;
@@ -17,6 +17,7 @@ contract CrosschainERC20 is ERC20Burnable {
 
     ERC20 public coToken;
     address public minter;
+    uint8 private decimals_;
 
     constructor(
         ERC20 _coToken,
@@ -24,11 +25,15 @@ contract CrosschainERC20 is ERC20Burnable {
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) public ERC20(_name, _symbol) {
+    ) ERC20(_name, _symbol) {
         coToken = _coToken;
         minter = _minter;
-        _setupDecimals(_decimals);
+        decimals_  = _decimals;
         emit MinterSet(_minter);
+    }
+
+    function decimals() public view virtual override returns (uint8) {
+        return decimals_;
     }
 
     function transferMintership(address _newMinter) public onlyMinter {

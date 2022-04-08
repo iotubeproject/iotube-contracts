@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT
-pragma solidity 0.7.6;
+
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
@@ -49,7 +50,7 @@ contract AssetRegistryV2 is Ownable {
         _;
     }
 
-    constructor() Ownable() public {
+    constructor() Ownable() {
         nextAssetID = 1;
     }
 

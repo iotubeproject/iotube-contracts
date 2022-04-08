@@ -1,17 +1,25 @@
 import _ from "lodash"
 import { ethers } from "hardhat"
 import { expect } from "chai"
-import { Contract } from "@ethersproject/contracts"
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers"
-import { ecsign, toBuffer, setLengthLeft, zeroAddress } from "ethereumjs-util"
+import { ecsign, toBuffer, setLengthLeft } from "ethereumjs-util"
+import privateKeyToAddress from "ethereum-private-key-to-address"
 
-const privateKeyToAddress = require("ethereum-private-key-to-address")
+import { Lord } from "../types/Lord"
+import { Ledger } from "../types/Ledger"
+import { Verifier } from "../types/Verifier"
+import { AssetRegistry } from "../types/AssetRegistry"
+import { CrosschainERC20Factory } from "../types/CrosschainERC20Factory"
+import { MockToken } from "../types/MockToken"
+import { Tube } from "../types/Tube"
+import { MockSafe } from "../types/MockSafe"
+import { CrosschainERC20 } from "../types/CrosschainERC20"
+
 
 const CHAIN_ID = 4690
 const FOREIGN_CHAIN_ID = 1
 const CHAIN_ID_A = 4689
 const CHAIN_ID_B = 4690
-const ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 const ZERO_THREE_SIGNATURES =
   "0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
 
@@ -30,16 +38,16 @@ function sign(hash: string, privateKey: string) {
 }
 
 describe("tube uint test", function () {
-  let lord: Contract
-  let ledger: Contract
-  let verifier: Contract
-  let assetRegistry: Contract
-  let factory: Contract
-  let tubeToken: Contract
-  let tube: Contract
-  let coToken: Contract
-  let localToken: Contract
-  let foreignToken: Contract
+  let lord: Lord
+  let ledger: Ledger
+  let verifier: Verifier
+  let assetRegistry: AssetRegistry
+  let factory: CrosschainERC20Factory
+  let tubeToken: MockToken
+  let tube: Tube
+  let coToken: MockToken
+  let localToken: CrosschainERC20
+  let foreignToken: CrosschainERC20
 
   let owner: SignerWithAddress
   let holder1: SignerWithAddress
@@ -52,35 +60,35 @@ describe("tube uint test", function () {
   beforeEach(async function () {
     [owner, holder1, holder2, holder3, attacker, treasure, safe] = await ethers.getSigners()
 
-    const Lord = await ethers.getContractFactory("Lord")
-    lord = await Lord.deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)
+    const LordFactory = await ethers.getContractFactory("Lord")
+    lord = await LordFactory.deploy(ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero) as Lord
     await lord.deployed()
 
-    const Ledger = await ethers.getContractFactory("Ledger")
-    ledger = await Ledger.deploy()
+    const LedgerFactory = await ethers.getContractFactory("Ledger")
+    ledger = await LedgerFactory.deploy() as Ledger
     await ledger.deployed()
 
-    const Verifier = await ethers.getContractFactory("Verifier")
-    verifier = await Verifier.deploy()
+    const VerifierFactory = await ethers.getContractFactory("Verifier")
+    verifier = await VerifierFactory.deploy() as Verifier
     await verifier.deployed()
 
-    const AssetRegistry = await ethers.getContractFactory("AssetRegistry")
-    assetRegistry = await AssetRegistry.deploy()
+    const AssetRegistryFactory = await ethers.getContractFactory("AssetRegistry")
+    assetRegistry = await AssetRegistryFactory.deploy() as AssetRegistry
     await assetRegistry.deployed()
 
-    const CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20Factory")
-    factory = await CrosschainERC20Factory.deploy(lord.address)
+    const CrosschainERC20FactoryFactory = await ethers.getContractFactory("CrosschainERC20Factory")
+    factory = await CrosschainERC20FactoryFactory.deploy(lord.address) as CrosschainERC20Factory
     await factory.deployed()
 
     let tx = await assetRegistry.grant(owner.address)
     await tx.wait()
 
-    const MockToken = await ethers.getContractFactory("MockToken")
-    tubeToken = await MockToken.deploy("name", "symbol", 6)
+    const MockTokenFactory = await ethers.getContractFactory("MockToken")
+    tubeToken = await MockTokenFactory.deploy("name", "symbol", 6) as MockToken
     await tubeToken.deployed()
 
-    const Tube = await ethers.getContractFactory("Tube")
-    tube = await Tube.deploy(CHAIN_ID, ledger.address, lord.address, verifier.address, tubeToken.address, treasure.address)
+    const TubeFactory = await ethers.getContractFactory("Tube")
+    tube = await TubeFactory.deploy(CHAIN_ID, ledger.address, lord.address, verifier.address, tubeToken.address, treasure.address) as Tube
     await tube.deployed()
 
     tx = await lord.transferOwnership(tube.address)
@@ -98,20 +106,20 @@ describe("tube uint test", function () {
     tx = await tube.unpause()
     await tx.wait()
 
-    coToken = await MockToken.deploy("name", "symbol", 6)
+    coToken = await MockTokenFactory.deploy("name", "symbol", 6) as MockToken
     await coToken.deployed()
 
     let ret = await factory.createLocalToken(coToken.address, "name", "symbol", 6)
     let receipt = await ret.wait()
     let event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
-    let CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
-    localToken = CrosschainERC20.attach(event.args[0])
+    let CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20")
+    localToken = CrosschainERC20Factory.attach(event.args[0]) as CrosschainERC20
 
     ret = await factory.createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
     event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
-    CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
-    foreignToken = CrosschainERC20.attach(event.args[0])
+    CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20")
+    foreignToken = CrosschainERC20Factory.attach(event.args[0]) as CrosschainERC20
 
     tx = await assetRegistry.addOriginalAsset(FOREIGN_CHAIN_ID, foreignToken.address);
     let retval = await tx.wait()
@@ -138,7 +146,7 @@ describe("tube uint test", function () {
 
   describe("depositTo", function () {
     it("invalid recipient", async function () {
-      await expect(tube.depositTo(CHAIN_ID, holder3.address, ZERO_ADDRESS, 1000, "0x")).to.be.revertedWith(
+      await expect(tube.depositTo(CHAIN_ID, holder3.address, ethers.constants.AddressZero, 1000, "0x")).to.be.revertedWith(
         "invalid recipient",
       )
     })
@@ -156,14 +164,14 @@ describe("tube uint test", function () {
       tx = await tube.unpause()
       await tx.wait()
       await expect(tube.deposit(CHAIN_ID, localToken.address, 1000, "0x")).to.be.revertedWith(
-        "transfer amount exceeds balance",
+        "ERC20: insufficient allowance",
       )
     })
 
     it("success without fee", async function () {
       await expect(coToken.mint(owner.address, 1000000))
         .to.emit(coToken, "Transfer")
-        .withArgs(ZERO_ADDRESS, owner.address, 1000000)
+        .withArgs(ethers.constants.AddressZero, owner.address, 1000000)
 
       await coToken.approve(localToken.address, 1000000)
 
@@ -193,7 +201,7 @@ describe("tube uint test", function () {
 
       await expect(coToken.mint(owner.address, 1000000))
         .to.emit(coToken, "Transfer")
-        .withArgs(ZERO_ADDRESS, owner.address, 1000000)
+        .withArgs(ethers.constants.AddressZero, owner.address, 1000000)
 
       await coToken.approve(localToken.address, 1000000)
 
@@ -203,7 +211,7 @@ describe("tube uint test", function () {
 
       await expect(tubeToken.mint(owner.address, 3000000))
         .to.emit(tubeToken, "Transfer")
-        .withArgs(ZERO_ADDRESS, owner.address, 3000000)
+        .withArgs(ethers.constants.AddressZero, owner.address, 3000000)
 
       await expect(tubeToken.approve(tube.address, 1000000))
         .to.emit(tubeToken, "Approval")
@@ -245,12 +253,12 @@ describe("tube uint test", function () {
 
     it("invalid recipient", async function () {
       await expect(
-        tube.withdraw(CHAIN_ID, 1, localToken.address, ZERO_ADDRESS, 1000, "0x", ZERO_THREE_SIGNATURES),
+        tube.withdraw(CHAIN_ID, 1, localToken.address, ethers.constants.AddressZero, 1000, "0x", ZERO_THREE_SIGNATURES),
       ).to.be.revertedWith("invalid recipient")
     })
 
     it("invalid signature length", async function () {
-      await expect(tube.withdraw(CHAIN_ID, 1, localToken.address, holder1.address, 1000, "0x", 0x00)).to.be.revertedWith(
+      await expect(tube.withdraw(CHAIN_ID, 1, localToken.address, holder1.address, 1000, "0x", "0x00")).to.be.revertedWith(
         "invalid signature length",
       )
     })
@@ -300,7 +308,7 @@ describe("tube uint test", function () {
   })
 
   describe("withdraw with data", function () {
-    let safeRouter: Contract;
+    let safeRouter: MockSafe;
     beforeEach(async function () {
       await expect(verifier.addAll([VALIDATOR_ADDRESSES[0]]))
         .to.emit(verifier, "ValidatorAdded")
@@ -314,8 +322,8 @@ describe("tube uint test", function () {
         .to.emit(verifier, "ValidatorAdded")
         .withArgs(VALIDATOR_ADDRESSES[2])
 
-      const MockSafe = await ethers.getContractFactory("MockSafe");
-      safeRouter = await MockSafe.deploy(safe.address);
+      const MockSafeFactory = await ethers.getContractFactory("MockSafe");
+      safeRouter = await MockSafeFactory.deploy(safe.address) as MockSafe;
       await safeRouter.deployed();
     })
 
@@ -488,25 +496,25 @@ describe("tube uint test", function () {
 })
 
 describe("tube integrate test", function () {
-  let lordA: Contract
-  let ledgerA: Contract
-  let verifierA: Contract
-  let assetRegistryA: Contract
-  let factoryA: Contract
-  let tubeTokenA: Contract
-  let tubeA: Contract
+  let lordA: Lord
+  let ledgerA: Ledger
+  let verifierA: Verifier
+  let assetRegistryA: AssetRegistry
+  let factoryA: CrosschainERC20Factory
+  let tubeTokenA: MockToken
+  let tubeA: Tube
 
-  let lordB: Contract
-  let ledgerB: Contract
-  let verifierB: Contract
-  let assetRegistryB: Contract
-  let factoryB: Contract
-  let tubeTokenB: Contract
-  let tubeB: Contract
+  let lordB: Lord
+  let ledgerB: Ledger
+  let verifierB: Verifier
+  let assetRegistryB: AssetRegistry
+  let factoryB: CrosschainERC20Factory
+  let tubeTokenB: MockToken
+  let tubeB: Tube
 
-  let coTokenA: Contract
-  let ceA: Contract
-  let ceB: Contract
+  let coTokenA: MockToken
+  let ceA: CrosschainERC20
+  let ceB: CrosschainERC20
 
   let ownerA: SignerWithAddress
   let ownerB: SignerWithAddress
@@ -520,61 +528,61 @@ describe("tube integrate test", function () {
   beforeEach(async function () {
     [ownerA, ownerB, holder1, holder2, holder3, attacker, treasureA, treasureB] = await ethers.getSigners()
 
-    const Lord = await ethers.getContractFactory("Lord")
-    lordA = await Lord.connect(ownerA).deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)
+    const LordFactory = await ethers.getContractFactory("Lord")
+    lordA = await LordFactory.connect(ownerA).deploy(ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero) as Lord
     await lordA.deployed()
-    lordB = await Lord.connect(ownerB).deploy(ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS, ZERO_ADDRESS)
+    lordB = await LordFactory.connect(ownerB).deploy(ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero, ethers.constants.AddressZero) as Lord
     await lordB.deployed()
 
-    const Ledger = await ethers.getContractFactory("Ledger")
-    ledgerA = await Ledger.connect(ownerA).deploy()
+    const LedgerFactory = await ethers.getContractFactory("Ledger")
+    ledgerA = await LedgerFactory.connect(ownerA).deploy() as Ledger
     await ledgerA.deployed()
-    ledgerB = await Ledger.connect(ownerB).deploy()
+    ledgerB = await LedgerFactory.connect(ownerB).deploy() as Ledger
     await ledgerB.deployed()
 
-    const Verifier = await ethers.getContractFactory("Verifier")
-    verifierA = await Verifier.connect(ownerA).deploy()
+    const VerifierFactory = await ethers.getContractFactory("Verifier")
+    verifierA = await VerifierFactory.connect(ownerA).deploy() as Verifier
     await verifierA.deployed()
-    verifierB = await Verifier.connect(ownerB).deploy()
+    verifierB = await VerifierFactory.connect(ownerB).deploy() as Verifier
     await verifierB.deployed()
 
-    const AssetRegistry = await ethers.getContractFactory("AssetRegistry")
-    assetRegistryA = await AssetRegistry.connect(ownerA).deploy()
+    const AssetRegistryFactory = await ethers.getContractFactory("AssetRegistry")
+    assetRegistryA = await AssetRegistryFactory.connect(ownerA).deploy() as AssetRegistry
     await assetRegistryA.deployed()
 
-    const CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20Factory")
-    factoryA = await CrosschainERC20Factory.connect(ownerA).deploy(lordA.address)
+    const CrosschainERC20FactoryFactory = await ethers.getContractFactory("CrosschainERC20Factory")
+    factoryA = await CrosschainERC20FactoryFactory.connect(ownerA).deploy(lordA.address) as CrosschainERC20Factory
     await factoryA.deployed()
-    factoryB = await CrosschainERC20Factory.connect(ownerB).deploy(lordB.address)
+    factoryB = await CrosschainERC20FactoryFactory.connect(ownerB).deploy(lordB.address) as CrosschainERC20Factory
     await factoryB.deployed()
 
     let tx = await assetRegistryA.connect(ownerA).grant(ownerA.address)
     await tx.wait()
 
-    const MockToken = await ethers.getContractFactory("MockToken")
-    tubeTokenA = await MockToken.connect(ownerA).deploy("name", "symbol", 6)
+    const MockTokenFactory = await ethers.getContractFactory("MockToken")
+    tubeTokenA = await MockTokenFactory.connect(ownerA).deploy("name", "symbol", 6) as MockToken
     await tubeTokenA.deployed()
-    tubeTokenB = await MockToken.connect(ownerB).deploy("name", "symbol", 6)
+    tubeTokenB = await MockTokenFactory.connect(ownerB).deploy("name", "symbol", 6) as MockToken
     await tubeTokenB.deployed()
 
-    const Tube = await ethers.getContractFactory("Tube")
-    tubeA = await Tube.connect(ownerA).deploy(
+    const TubeFactory = await ethers.getContractFactory("Tube")
+    tubeA = await TubeFactory.connect(ownerA).deploy(
       CHAIN_ID_A,
       ledgerA.address,
       lordA.address,
       verifierA.address,
       tubeTokenA.address,
       treasureA.address,
-    )
+    ) as Tube
     await tubeA.deployed()
-    tubeB = await Tube.connect(ownerB).deploy(
+    tubeB = await TubeFactory.connect(ownerB).deploy(
       CHAIN_ID_B,
       ledgerB.address,
       lordB.address,
       verifierB.address,
       tubeTokenB.address,
       treasureB.address,
-    )
+    ) as Tube
     await tubeB.deployed()
 
     tx = await lordA.connect(ownerA).transferOwnership(tubeA.address)
@@ -600,20 +608,20 @@ describe("tube integrate test", function () {
     tx = await tubeB.connect(ownerB).unpause()
     await tx.wait()
 
-    coTokenA = await MockToken.connect(ownerA).deploy("name", "symbol", 6)
+    coTokenA = await MockTokenFactory.connect(ownerA).deploy("name", "symbol", 6) as MockToken
     await coTokenA.deployed()
 
     let ret = await factoryA.connect(ownerA).createLocalToken(coTokenA.address, "name", "symbol", 6)
     let receipt = await ret.wait()
     let event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
-    let CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
-    ceA = CrosschainERC20.attach(event.args[0])
+    let CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20")
+    ceA = CrosschainERC20Factory.attach(event.args[0]) as CrosschainERC20
 
     ret = await factoryB.connect(ownerB).createForeignToken("name", "symbol", 6)
     receipt = await ret.wait()
     event = _.find(receipt.events, (e: any) => e.event == "NewCrosschainERC20")
-    CrosschainERC20 = await ethers.getContractFactory("CrosschainERC20")
-    ceB = CrosschainERC20.attach(event.args[0])
+    CrosschainERC20Factory = await ethers.getContractFactory("CrosschainERC20")
+    ceB = CrosschainERC20Factory.attach(event.args[0]) as CrosschainERC20
 
     tx = await assetRegistryA.connect(ownerA).addOriginalAsset(CHAIN_ID_A, ceA.address)
     await tx.wait()
@@ -633,7 +641,7 @@ describe("tube integrate test", function () {
       .to.emit(coTokenA, "Transfer")
       .withArgs(holder1.address, ceA.address, amount)
       .to.emit(ceA, "Transfer")
-      .withArgs(ZERO_ADDRESS, holder1.address, amount)
+      .withArgs(ethers.constants.AddressZero, holder1.address, amount)
 
     await expect(ceA.connect(holder1).approve(lordA.address, amount))
       .to.emit(ceA, "Approval")
