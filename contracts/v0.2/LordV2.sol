@@ -2,94 +2,45 @@
 
 pragma solidity >=0.8.0;
 
-import "../Owned.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface IToken {
+interface IERC20Mintable {
     function mint(address recipient, uint256 amount) external;
-
-    function burn(uint256 amount) external;
-
-    function burnFrom(address owner, uint256 amount) external;
-
-    function transferFrom(
-        address sender,
-        address recipient,
-        uint256 amount
-    ) external;
 }
 
-interface IAllowlist {
-    function isAllowed(address) external view returns (bool);
-}
+contract LordV2 is Ownable {
+    event MinterAdded(address indexed minter, uint256 effectiveBlock);
+    event MinterRemoved(address indexed minter);
 
-interface IMinter {
-    function mint(
-        address _token,
-        address _recipient,
-        uint256 _amount
-    ) external returns (bool);
+    mapping(address => uint256) public minters;
+    mapping(bytes32 => uint256) public records;
 
-    function transferOwnership(address newOwner) external;
+    uint256 immutable public waitingBlocks;
 
-    function owner() external view returns (address);
-}
-
-contract LordV2 is Owned {
-    using Address for address;
-
-    IAllowlist public proxyTokenList;
-    IMinter public minterPool;
-
-    constructor(
-        IAllowlist _proxyTokenList,
-        IMinter _minterPool
-    ) {
-        proxyTokenList = _proxyTokenList;
-        minterPool = _minterPool;
+    constructor(uint256 _waitingBlocks) {
+        waitingBlocks = _waitingBlocks;
     }
 
-    function burn(
-        address _token,
-        address _sender,
-        uint256 _amount
-    ) public onlyOwner {
-        if (address(proxyTokenList) != address(0) && proxyTokenList.isAllowed(_token)) {
-            _callOptionalReturn(
-                _token,
-                abi.encodeWithSelector(IToken(_token).transferFrom.selector, _sender, address(this), _amount)
-            );
-            _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burn.selector, _amount));
-            return;
+    function addMinter(address _minter) public onlyOwner {
+        if (minters[_minter] == 0) {
+            minters[_minter] = block.number + waitingBlocks;
+            emit MinterAdded(_minter, block.number + waitingBlocks);
         }
-        _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).burnFrom.selector, _sender, _amount));
+    }
+
+    function removeMinter(address _minter) public onlyOwner {
+        if (minters[_minter] > 0) {
+            minters[_minter] = 0;
+            emit MinterRemoved(_minter);
+        }
     }
 
     function mint(
-        address _token,
+        IERC20Mintable _token,
         address _recipient,
         uint256 _amount
-    ) public onlyOwner {
-        if (address(proxyTokenList) != address(0) && proxyTokenList.isAllowed(_token)) {
-            require(minterPool.mint(_token, _recipient, _amount), "proxy token mint failed");
-        }
-        _callOptionalReturn(_token, abi.encodeWithSelector(IToken(_token).mint.selector, _recipient, _amount));
-    }
-
-    function upgrade(address _newLord) public onlyOwner {
-        if (minterPool.owner() == address(this)) {
-            _callOptionalReturn(
-                address(minterPool),
-                abi.encodeWithSelector(minterPool.transferOwnership.selector, _newLord)
-            );
-        }
-    }
-
-    function _callOptionalReturn(address addr, bytes memory data) private {
-        bytes memory returndata = addr.functionCall(data, "low-level call failed");
-        if (returndata.length > 0) {
-            // solhint-disable-next-line max-line-length
-            require(abi.decode(returndata, (bool)), "operation did not succeed");
-        }
+    ) public {
+        require(minters[msg.sender] >= block.number, "invalid minter");
+        _token.mint(_recipient, _amount);
     }
 }

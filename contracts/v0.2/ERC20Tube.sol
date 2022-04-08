@@ -8,18 +8,11 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface ILedger {
-    function owner() external view returns (address);
-    function transferOwnership(address _newOwner) external;
-    function acceptOwnership() external;
     function get(bytes32 _key) external view returns (uint256);
     function record(bytes32 _key) external;
 }
 
 interface ILord {
-    function owner() external view returns (address);
-    function transferOwnership(address _newOwner) external;
-    function acceptOwnership() external;
-    function burn(address _token, address _owner, uint256 _amount) external;
     function mint(address _token, address _recipient, uint256 _amount) external;
 }
 
@@ -111,7 +104,11 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
             tubeToken.safeTransferFrom(msg.sender, safe, fee);
         }
         if (taxRate > 0) {
-            _amount -= _amount * taxRate / 10000;
+            uint256 tax = _amount * taxRate / 10000;
+            if (tax > 0) {
+                _amount -= tax;
+                IERC20(_token).transferFrom(msg.sender, safe, tax);
+            }
         }
         IBurnableERC20(_token).burnFrom(msg.sender, _amount);
         emit Receipt(nonce++, msg.sender, _token, _amount, _targetTubeID, _to, fee);
@@ -132,11 +129,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         address _recipient,
         uint256 _amount
     ) public view returns (bytes32) {
-        return keccak256(abi.encodePacked(_srcTubeID, _nonce, tubeID, _token, _recipient, _amount));
-    }
-
-    function concatKeys(bytes32[] memory keys) public pure returns (bytes32) {
-        return keccak256(abi.encodePacked(keys));
+        return keccak256(abi.encodePacked(_srcTubeID, _nonce, _token, _amount, tubeID, _recipient));
     }
 
     function isSettled(bytes32 key) public view returns (bool) {
