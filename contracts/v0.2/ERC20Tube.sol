@@ -148,6 +148,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         require(_recipient != address(0), "invalid recipient");
         require(_signatures.length % 65 == 0, "invalid signature length");
         bytes32 key = genKey(_srcTubeID, _nonce, _token, _recipient, _amount);
+        require(ledger.get(key) == 0, "already settled");
         ledger.record(key);
         (bool isValid, address[] memory signers) = verifier.verify(key, _signatures);
         require(isValid, "insufficient validators");

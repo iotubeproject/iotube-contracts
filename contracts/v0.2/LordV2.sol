@@ -16,7 +16,6 @@ contract LordV2 is Initializable, OwnedUpgradeable {
     event MinterRemoved(address indexed minter);
 
     mapping(address => uint256) public minters;
-    mapping(bytes32 => uint256) public records;
 
     uint256 public waitingBlocks;
     
