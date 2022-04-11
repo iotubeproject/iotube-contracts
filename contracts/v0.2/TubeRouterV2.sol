@@ -40,10 +40,10 @@ contract TubeRouterV2 is Ownable {
     }
 
     function depositTo(
-        uint256 _tubeID,
         address _token,
-        address _recipient,
-        uint256 _amount
+        uint256 _amount,
+        uint256 _tubeID,
+        address _recipient
     ) public payable {
         uint256 fee = relayFee(_tubeID);
         require(fee > 0 && msg.value >= fee, "insufficient relay fee");
