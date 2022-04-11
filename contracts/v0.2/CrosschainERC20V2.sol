@@ -5,32 +5,28 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-interface ICrosschainERC20Factory {
-    function lord() external returns (address);
-}
-
 contract CrosschainERC20V2 is ERC20BurnableUpgradeable {
     using SafeERC20 for IERC20;
 
     modifier onlyMinter() {
-        require(factory.lord() == msg.sender, "not the minter");
+        require(minter == msg.sender, "not the minter");
         _;
     }
 
     IERC20 public coToken;
-    ICrosschainERC20Factory public factory;
+    address public minter;
     uint8 private decimals_;
 
     function initialize(
         IERC20 _coToken,
-        address _factory,
+        address _minter,
         string memory _name,
         string memory _symbol,
         uint8 _decimals
     ) external {
         __ERC20_init(_name, _symbol);
         coToken = _coToken;
-        factory = ICrosschainERC20Factory(_factory);
+        minter = _minter;
         decimals_  = _decimals;
     }
 
