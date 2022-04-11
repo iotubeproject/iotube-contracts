@@ -26,11 +26,15 @@ contract CrosschainERC20FactoryV2 is Ownable {
         lord = _lord;
     }
 
+    function setLord(address _lord) external onlyOwner {
+        lord = _lord;
+    }
+
     function createForeignToken(
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) public onlyOwner returns (address) {
+    ) external returns (address) {
         address cc = Clones.clone(tokenInstance);
         CrosschainERC20V2(cc).initialize(IERC20(address(0)), lord, _name, _symbol, _decimals);
         emit NewCrosschainERC20(cc, address(0), lord, _name, _symbol, _decimals);
@@ -43,7 +47,7 @@ contract CrosschainERC20FactoryV2 is Ownable {
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) public onlyOwner returns (address) {
+    ) external returns (address) {
         require(address(_coToken) != address(0), "invalid paramter");
         address cc = Clones.clone(tokenInstance);
         CrosschainERC20V2(cc).initialize(_coToken, lord, _name, _symbol, _decimals);
