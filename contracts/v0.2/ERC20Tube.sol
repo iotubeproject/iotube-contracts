@@ -3,6 +3,7 @@
 pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -157,7 +158,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
     }
 
     function withdrawCoin(address payable _to) external onlyOwner {
-        _to.transfer(address(this).balance);
+        Address.sendValue(_to, address(this).balance);
     }
 
     function withdrawToken(address _to, IERC20 _token) external onlyOwner {
