@@ -5,12 +5,18 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AssetUpperBound is Ownable {
-    event UppserBoundSet(address indexed asset, uint256 upperBound);
+    event UpperBoundSet(uint256 indexed assetID,  uint256 upperBound);
 
-    mapping(address => uint256) public upperBounds;
+    // asset => upper bound
+    mapping(uint256 => uint256) private _upperBounds;
 
-    function setUpperBound(address _asset, uint256 _upperBound) public onlyOwner {
-        upperBounds[_asset] = _upperBound;
-        emit UppserBoundSet(_asset, _upperBound);
+    function setUpperBound(uint256 _assetID, uint256 _upperBound) public onlyOwner {
+        _upperBounds[_assetID] = _upperBound;
+
+        emit UpperBoundSet(_assetID, _upperBound);
+    }
+
+    function getUpperBound(uint256 _assetID) public view returns (uint256) {
+        return _upperBounds[_assetID];
     }
 }
