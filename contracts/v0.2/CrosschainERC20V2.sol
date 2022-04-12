@@ -23,7 +23,7 @@ contract CrosschainERC20V2 is ERC20BurnableUpgradeable {
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) external {
+    ) external initializer {
         __ERC20_init(_name, _symbol);
         coToken = _coToken;
         minter = _minter;
