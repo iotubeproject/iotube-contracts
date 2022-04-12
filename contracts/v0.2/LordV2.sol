@@ -18,7 +18,7 @@ contract LordV2 is Initializable, OwnedUpgradeable {
     mapping(address => uint256) public minters;
 
     uint256 public waitingBlocks;
-    
+
     function initialize(uint256 _waitingBlocks) public initializer {
         __Owned_init();
         waitingBlocks = _waitingBlocks;

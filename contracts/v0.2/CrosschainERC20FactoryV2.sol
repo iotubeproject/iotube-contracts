@@ -24,6 +24,7 @@ contract CrosschainERC20FactoryV2 is Ownable {
     constructor(address _lord, address _tokenInstance) {
         require(_tokenInstance.isContract(), "token instance isn't contract");
         lord = _lord;
+        tokenInstance = _tokenInstance;
     }
 
     function setLord(address _lord) external onlyOwner {
