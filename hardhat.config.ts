@@ -49,6 +49,11 @@ export default {
         url: 'https://babel-api.testnet.iotex.io',
         accounts: accounts,
         chainId: 4690,
+    },
+    avax_test: {
+        url: 'https://api.avax-test.network/ext/bc/C/rpc',
+        accounts: accounts,
+        chainId: 43113,
     }
   },
   solidity: {

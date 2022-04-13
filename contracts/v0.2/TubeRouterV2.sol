@@ -20,42 +20,89 @@ interface ITube {
     function tubeToken() external view returns (IERC20);
 }
 
+interface ICrosschainToken {
+    function deposit(uint256 _amount) external;
+    function coToken() external view returns (IERC20);
+}
+
 contract TubeRouterV2 is Ownable {
     using SafeERC20 for IERC20;
     event RelayFeeReceipt(address user, uint256 amount);
 
     mapping(uint256 => uint256) private relayFees;
+    address public feeToken;
     ITube public tube;
 
     constructor(ITube _tube) {
         tube = _tube;
     }
 
-    function setRelayFee(uint256 _tubeID, uint256 _fee) public onlyOwner {
+    function setRelayFee(uint256 _tubeID, uint256 _fee) external onlyOwner {
         relayFees[_tubeID] = _fee;
+    }
+
+    function setFeeToken(address _feeToken) external onlyOwner {
+        feeToken = _feeToken;
     }
 
     function relayFee(uint256 _tubeID) public view returns (uint256) {
         return relayFees[_tubeID];
     }
 
-    function depositTo(
-        address _token,
+    function depositToWithToken(
+        address _crosschainToken,
         uint256 _amount,
         uint256 _tubeID,
         address _recipient
-    ) public payable {
+    ) external payable {
         uint256 fee = relayFee(_tubeID);
-        require(fee > 0 && msg.value >= fee, "insufficient relay fee");
+        require(fee > 0, "unset relay fee");
+        if (feeToken == address(0)) {
+            require(msg.value >= fee, "insufficient relay fee");
+        } else {
+            IERC20(feeToken).safeTransferFrom(msg.sender, address(this), fee);
+        }
+
+        IERC20 token = ICrosschainToken(_crosschainToken).coToken();
+        require(address(token) != address(0), "invalid token");
+        token.safeTransferFrom(msg.sender, address(this), _amount);
+        token.safeApprove(_crosschainToken, _amount);
+        ICrosschainToken(_crosschainToken).deposit(_amount);
+
         uint256 tubeFee = tube.fees(_tubeID);
         if (tubeFee > 0) {
             IERC20 tubeToken = tube.tubeToken();
             tubeToken.safeTransferFrom(msg.sender, address(this), tubeFee);
             tubeToken.safeApprove(address(tube), _amount);
         }
-        IERC20(_token).safeTransferFrom(msg.sender, address(this), _amount);
-        IERC20(_token).safeApprove(address(tube), _amount);
-        tube.depositTo(_token, _amount, _tubeID, _recipient);
+        IERC20(_crosschainToken).safeApprove(address(tube), _amount);
+        tube.depositTo(_crosschainToken, _amount, _tubeID, _recipient);
+        emit RelayFeeReceipt(msg.sender, msg.value);
+    }
+
+    function depositTo(
+        address _crosschainToken,
+        uint256 _amount,
+        uint256 _tubeID,
+        address _recipient
+    ) external payable {
+        uint256 fee = relayFee(_tubeID);
+        require(fee > 0, "unset relay fee");
+        if (feeToken == address(0)) {
+            require(msg.value >= fee, "insufficient relay fee");
+        } else {
+            IERC20(feeToken).safeTransferFrom(msg.sender, address(this), fee);
+        }
+
+        uint256 tubeFee = tube.fees(_tubeID);
+        if (tubeFee > 0) {
+            IERC20 tubeToken = tube.tubeToken();
+            tubeToken.safeTransferFrom(msg.sender, address(this), tubeFee);
+            tubeToken.safeApprove(address(tube), _amount);
+        }
+        IERC20(_crosschainToken).safeTransferFrom(msg.sender, address(this), _amount);
+        IERC20(_crosschainToken).safeApprove(address(tube), _amount);
+        tube.depositTo(_crosschainToken, _amount, _tubeID, _recipient);
         emit RelayFeeReceipt(msg.sender, msg.value);
     }
 
