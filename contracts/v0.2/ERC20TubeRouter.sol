@@ -6,6 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC721/IERC721.sol";
+import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 interface ITube {
     function depositTo(
@@ -25,9 +26,9 @@ interface ICrosschainToken {
     function coToken() external view returns (IERC20);
 }
 
-contract TubeRouterV2 is Ownable {
+contract ERC20TubeRouter is Ownable, ReentrancyGuard {
     using SafeERC20 for IERC20;
-    event RelayFeeReceipt(address user, uint256 amount);
+    event RelayFeeReceipt(address indexed user, address indexed token, uint256 indexed targetTubeID, uint256 amount);
 
     mapping(uint256 => uint256) private relayFees;
     address public feeToken;
@@ -54,7 +55,7 @@ contract TubeRouterV2 is Ownable {
         uint256 _amount,
         uint256 _tubeID,
         address _recipient
-    ) external payable {
+    ) external payable nonReentrant {
         uint256 fee = relayFee(_tubeID);
         require(fee > 0, "unset relay fee");
         if (feeToken == address(0)) {
@@ -77,7 +78,7 @@ contract TubeRouterV2 is Ownable {
         }
         IERC20(_crosschainToken).safeApprove(address(tube), _amount);
         tube.depositTo(_crosschainToken, _amount, _tubeID, _recipient);
-        emit RelayFeeReceipt(msg.sender, msg.value);
+        emit RelayFeeReceipt(msg.sender, _crosschainToken, _tubeID, fee);
     }
 
     function depositTo(
@@ -85,7 +86,7 @@ contract TubeRouterV2 is Ownable {
         uint256 _amount,
         uint256 _tubeID,
         address _recipient
-    ) external payable {
+    ) external payable nonReentrant {
         uint256 fee = relayFee(_tubeID);
         require(fee > 0, "unset relay fee");
         if (feeToken == address(0)) {
@@ -103,7 +104,7 @@ contract TubeRouterV2 is Ownable {
         IERC20(_crosschainToken).safeTransferFrom(msg.sender, address(this), _amount);
         IERC20(_crosschainToken).safeApprove(address(tube), _amount);
         tube.depositTo(_crosschainToken, _amount, _tubeID, _recipient);
-        emit RelayFeeReceipt(msg.sender, msg.value);
+        emit RelayFeeReceipt(msg.sender, _crosschainToken, _tubeID, fee);
     }
 
     function withdrawCoin(address payable _to) external onlyOwner {
