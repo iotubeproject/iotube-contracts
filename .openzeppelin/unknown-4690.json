@@ -159,6 +159,80 @@
           }
         }
       }
+    },
+    "f79d66ae360336bcbd1934d5689724862ef3e0ec11bf7135a309152c7f7819c3": {
+      "address": "0x179337E88e00482AB6d5F34E5122C1e6424e2975",
+      "txHash": "0xe146038427c51b4cd85728ef27d5d3f2e66c54cbe7fecb070eb8c0ff1f47e23d",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "owner",
+            "offset": 2,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "OwnedUpgradeable",
+            "src": "contracts/v0.2/OwnedUpgradeable.sol:11"
+          },
+          {
+            "label": "candidateOwner",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "OwnedUpgradeable",
+            "src": "contracts/v0.2/OwnedUpgradeable.sol:12"
+          },
+          {
+            "label": "minters",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_address,t_uint256)",
+            "contract": "LordV2",
+            "src": "contracts/v0.2/LordV2.sol:18"
+          },
+          {
+            "label": "waitingBlocks",
+            "offset": 0,
+            "slot": "3",
+            "type": "t_uint256",
+            "contract": "LordV2",
+            "src": "contracts/v0.2/LordV2.sol:20"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_uint256)": {
+            "label": "mapping(address => uint256)",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
     }
   }
 }
