@@ -39,7 +39,7 @@ contract LordV2 is Initializable, OwnedUpgradeable {
     }
 
     function isMinter(address _minter) public view returns (bool) {
-        return minters[_minter] <= block.number;
+        return minters[_minter] > 0 && minters[_minter] <= block.number;
     }
 
     function mint(
