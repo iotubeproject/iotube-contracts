@@ -1,12 +1,14 @@
 // SPDX-License-Identifier: MIT
+
 pragma experimental ABIEncoderV2;
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract AssetRegistry is Ownable {
     event NewOriginalAsset(uint256 indexed tubeID, address indexed asset, uint256 indexed id);
     event AssetAddedOnTube(uint256 indexed id, uint256 indexed tubeID, address asset);
+    event AssetRemovedOnTube(uint256 indexed id, uint256 indexed tubeID, address asset);
     event AssetActivated(uint256 indexed id, uint256 indexed tubID);
     event AssetDeactivated(uint256 indexed id, uint256 indexed tubeID);
     event TubeActivated(uint256 indexed tubID);
@@ -92,10 +94,22 @@ contract AssetRegistry is Ownable {
             _tubeID > 0 && _asset != address(0) && _assetID > 0 && _assetID <= originalAssets.length,
             "invalid parameter"
         );
+        require(assetID(_tubeID, _asset) == 0, "invalid asset");
         require(shadowAssets[_assetID][_tubeID].asset == address(0), "invalid asset");
         shadowAssets[_assetID][_tubeID] = Asset(_tubeID, _asset, true);
         shadowAssetIDs[_tubeID][_asset] = _assetID;
         emit AssetAddedOnTube(_assetID, _tubeID, _asset);
+    }
+
+    function removeAssetOnTube(
+        uint256 _assetID,
+        uint256 _tubeID
+    ) public onlyOperator {
+        address asset = shadowAssets[_assetID][_tubeID].asset;
+        require(asset != address(0), "not exist");
+        delete shadowAssetIDs[_tubeID][asset];
+        delete shadowAssets[_assetID][_tubeID];
+        emit AssetRemovedOnTube(_assetID, _tubeID, asset);
     }
 
     function activateAsset(uint256 _assetID, uint256 _tubeID) public onlyOperator {

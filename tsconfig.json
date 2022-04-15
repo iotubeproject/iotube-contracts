@@ -8,7 +8,9 @@
     "resolveJsonModule": true,
     "declaration": true,
     "sourceMap": true,
+    "noImplicitAny": false
   },
-  "include": ["./scripts", "./test"],
+  "exclude": ["dist", "node_modules"],
+  "include": ["./test", "./src", "./scripts"],
   "files": ["./hardhat.config.ts"]
 }

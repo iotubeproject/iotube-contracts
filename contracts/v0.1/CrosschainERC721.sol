@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/token/ERC721/ERC721Burnable.sol";
+import "@openzeppelin/contracts/token/ERC721/extensions/ERC721Burnable.sol";
 
 contract CrosschainERC721 is ERC721Burnable {
     event MinterSet(address indexed minter);
@@ -20,7 +20,7 @@ contract CrosschainERC721 is ERC721Burnable {
         address _minter,
         string memory _name,
         string memory _symbol
-    ) public ERC721(_name, _symbol) {
+    ) ERC721(_name, _symbol) {
         coToken = _coToken;
         minter = _minter;
         emit MinterSet(_minter);

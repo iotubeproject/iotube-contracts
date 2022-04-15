@@ -1,8 +1,10 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity >=0.6.0 <0.8.0;
+pragma solidity >=0.8.0;
 
-abstract contract Owned {
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
+
+abstract contract OwnedUpgradeable is Initializable {
     event CandidateOwnerNominated(address candidate);
     event OwnershipTransferred(address owner);
 
@@ -14,7 +16,7 @@ abstract contract Owned {
         _;
     }
 
-    constructor() {
+    function __Owned_init() internal onlyInitializing {
         owner = msg.sender;
         emit OwnershipTransferred(msg.sender);
     }

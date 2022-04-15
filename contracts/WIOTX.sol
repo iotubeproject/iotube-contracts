@@ -1,4 +1,6 @@
-pragma solidity 0.7.6;
+// SPDX-License-Identifier: MIT
+
+pragma solidity >= 0.8.0;
 
 contract WIOTX {
     string public name = "Wrapped IOTX";
@@ -25,7 +27,7 @@ contract WIOTX {
     function withdraw(uint256 wad) public {
         require(balanceOf[msg.sender] >= wad);
         balanceOf[msg.sender] -= wad;
-        msg.sender.transfer(wad);
+        payable(msg.sender).transfer(wad);
         emit Withdrawal(msg.sender, wad);
     }
 
@@ -50,7 +52,7 @@ contract WIOTX {
     ) public returns (bool) {
         require(balanceOf[src] >= wad);
 
-        if (src != msg.sender && allowance[src][msg.sender] != uint256(-1)) {
+        if (src != msg.sender && allowance[src][msg.sender] != type(uint256).max) {
             require(allowance[src][msg.sender] >= wad);
             allowance[src][msg.sender] -= wad;
         }

@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "./CrosschainERC20.sol";
@@ -16,7 +16,7 @@ contract CrosschainERC20Factory is Ownable {
     );
     address public lord;
 
-    constructor(address _lord) public {
+    constructor(address _lord) {
         lord = _lord;
     }
 
@@ -25,7 +25,7 @@ contract CrosschainERC20Factory is Ownable {
         string memory _symbol,
         uint8 _decimals
     ) public onlyOwner returns (CrosschainERC20) {
-        CrosschainERC20 cc = new CrosschainERC20(ERC20(0), lord, _name, _symbol, _decimals);
+        CrosschainERC20 cc = new CrosschainERC20(ERC20(address(0)), lord, _name, _symbol, _decimals);
         emit NewCrosschainERC20(address(cc), address(0), lord, _name, _symbol, _decimals);
 
         return cc;

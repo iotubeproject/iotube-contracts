@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-pragma solidity 0.7.6;
+pragma solidity >=0.8.0;
 
 contract ValidatorRegistry {
     struct File {
@@ -8,10 +8,13 @@ contract ValidatorRegistry {
         uint256 genre;
         string uri;
     }
+    event Registration(address indexed validator, uint256 indexed genre, string uri);
+
     mapping(address => File) public files;
 
-    function register(uint256 genre, string calldata uri) public {
-        files[msg.sender] = File(msg.sender, genre, uri);
+    function register(uint256 _genre, string calldata _uri) public {
+        files[msg.sender] = File(msg.sender, _genre, _uri);
+        emit Registration(msg.sender, _genre, _uri);
     }
 
     function getFile(address _validator) public view returns (uint256, string memory) {
