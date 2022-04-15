@@ -60,7 +60,7 @@ contract Lord is Owned {
         IMinter _tokenSafe,
         IAllowlist _proxyTokenList,
         IMinter _minterPool
-    ) {
+    ) public Owned() {
         standardTokenList = _standardTokenList;
         tokenSafe = _tokenSafe;
         proxyTokenList = _proxyTokenList;
