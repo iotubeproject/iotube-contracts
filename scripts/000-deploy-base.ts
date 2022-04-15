@@ -1,6 +1,9 @@
 import * as fs from "fs";
 import { ethers, network, upgrades } from "hardhat"
 
+import { LedgerV2 } from "../types/LedgerV2"
+import { LordV2 } from "../types/LordV2"
+
 async function main() {
   const [deployer] = await ethers.getSigners()
 
@@ -12,10 +15,11 @@ async function main() {
   console.log("TubeToken deployed to:", tubeToken.address)
   deployment["tubeToken"] = tubeToken.address
 
-  const LordV2 = await ethers.getContractFactory("LordV2")
-  const lordV2 = await upgrades.deployProxy(LordV2, [
-    51840, // 3 days
-  ]);
+  const LordV2Factory = await ethers.getContractFactory("LordV2")
+  const lordV2 = await upgrades.deployProxy(LordV2Factory, [
+    // 51840, // 3 days
+    1, // 5 seconds
+  ]) as LordV2;
   await lordV2.deployed();
   console.log("LordV2 deployed to:", lordV2.address)
   deployment["lord"] = lordV2.address
@@ -26,8 +30,8 @@ async function main() {
   console.log("AssetRegistryV2 deployed to:", assetRegistryV2.address)
   deployment["assetRegistry"] = assetRegistryV2.address
 
-  const LedgerV2 = await ethers.getContractFactory("LedgerV2")
-  const ledgerV2 = await LedgerV2.deploy()
+  const LedgerV2Factory = await ethers.getContractFactory("LedgerV2")
+  const ledgerV2 = await LedgerV2Factory.deploy() as LedgerV2
   await ledgerV2.deployed();
   console.log("LedgerV2 deployed to:", ledgerV2.address)
   deployment["ledger"] = ledgerV2.address
@@ -52,6 +56,11 @@ async function main() {
   console.log("ERC20Tube deployed to:", tube.address)
   deployment["tube"] = tube.address
 
+  // add operator
+  await ledgerV2.addOperator(tube.address)
+  // add minter
+  await lordV2.addMinter(tube.address)
+
   const CrosschainERC20V2 = await ethers.getContractFactory("CrosschainERC20V2")
   const cToken = await CrosschainERC20V2.deploy()
   await cToken.deployed();
@@ -64,11 +73,11 @@ async function main() {
   console.log("CrosschainERC20FactoryV2 deployed to:", cTokenFactory.address)
   deployment["cTokenFactory"] = cTokenFactory.address
 
-  const TubeRouterV2 = await ethers.getContractFactory("TubeRouterV2")
-  const tubeRouterV2 = await TubeRouterV2.deploy(tube.address)
-  await tubeRouterV2.deployed();
-  console.log("TubeRouterV2 deployed to:", tubeRouterV2.address)
-  deployment["tubeRouter"] = tubeRouterV2.address
+  const ERC20TubeRouter = await ethers.getContractFactory("ERC20TubeRouter")
+  const router = await ERC20TubeRouter.deploy(tube.address)
+  await router.deployed();
+  console.log("ERC20TubeRouter deployed to:", router.address)
+  deployment["erc20TubeRouter"] = router.address
 
   if(!fs.existsSync("./deployments")) {
     fs.mkdirSync("./deployments")

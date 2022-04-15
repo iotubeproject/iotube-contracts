@@ -38,12 +38,16 @@ contract LordV2 is Initializable, OwnedUpgradeable {
         }
     }
 
+    function isMinter(address _minter) public view returns (bool) {
+        return minters[_minter] > 0 && minters[_minter] <= block.number;
+    }
+
     function mint(
         IERC20Mintable _token,
         address _recipient,
         uint256 _amount
     ) public {
-        require(minters[msg.sender] >= block.number, "invalid minter");
+        require(isMinter(msg.sender), "invalid minter");
         _token.mint(_recipient, _amount);
     }
 }
