@@ -14,10 +14,9 @@ describe("crosschain erc20 factory v2", () => {
 
   it("checkout create token", async () => {
     const tokenFactory = await ethers.getContractFactory("CrosschainERC20V2")
-    const template = await tokenFactory.deploy()
 
     const factoryFactory = await ethers.getContractFactory("CrosschainERC20FactoryV2")
-    const factory = await factoryFactory.deploy(ethers.constants.AddressZero, template.address) as CrosschainERC20FactoryV2
+    const factory = await factoryFactory.deploy(ethers.constants.AddressZero) as CrosschainERC20FactoryV2
 
     const createTokenTx = await factory.createForeignToken("Test Token", "TEST", 8)
     const { events } = await createTokenTx.wait()
@@ -27,6 +26,5 @@ describe("crosschain erc20 factory v2", () => {
     expect(await cToken.name()).to.equal("Test Token");
     expect(await cToken.symbol()).to.equal("TEST");
     expect(await cToken.decimals()).to.equal(8);
-    expect(await cToken.minter()).to.equal(ethers.constants.AddressZero);
   })
 })
