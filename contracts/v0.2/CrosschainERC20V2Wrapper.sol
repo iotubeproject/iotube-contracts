@@ -19,28 +19,34 @@ contract CrosschainERC20V2Wrapper is Ownable {
     event AddCoToken( address indexed coToken);
     event RemoveCoToken(address indexed coToken);
 
+    address internal constant SENTINEL_TOKENS = address(0x1);
+
     IERC20Mintable public crosschainToken;
     uint256 public coTokenCount;
-    mapping(address => bool) public coTokens;
+    mapping(address => address) public coTokens;
 
     constructor(address _crosschainToken) {
         crosschainToken = IERC20Mintable(_crosschainToken);
     }
 
     function addCoToken(address _coToken) external onlyOwner {
-        if(!coTokens[_coToken]) {
-            coTokens[_coToken] = true;
-            coTokenCount++;
-            emit AddCoToken(_coToken);
-        }
+        require(_coToken != address(0) && _coToken != SENTINEL_TOKENS, "error coToken address");
+        require(coTokens[_coToken] == address(0), "already added");
+       
+        coTokens[_coToken] = coTokens[SENTINEL_TOKENS];
+        coTokens[SENTINEL_TOKENS] = _coToken;
+        coTokenCount++;
+        emit AddCoToken(_coToken);
     }
 
-    function removeCoToken(address _coToken) external onlyOwner {
-        if(coTokens[_coToken]) {
-            coTokens[_coToken] = false;
-            coTokenCount--;
-            emit RemoveCoToken(_coToken);
-        }
+    function removeCoToken(address _preCoToken, address _coToken) external onlyOwner {
+        require(_coToken != address(0) && _coToken != SENTINEL_TOKENS, "error coToken address");
+        require(coTokens[_preCoToken] == _coToken, "error pre coToken");
+
+        coTokens[_preCoToken] == coTokens[_coToken];
+        coTokens[_coToken] == address(0);
+        coTokenCount--;
+        emit RemoveCoToken(_coToken);
     }
 
     function deposit(address _coToken, uint256 _amount) external {
@@ -48,7 +54,7 @@ contract CrosschainERC20V2Wrapper is Ownable {
     }
 
     function depositTo(address _coToken, address _to, uint256 _amount) public {
-        require(coTokens[_coToken], "no co-token");
+        require(_coToken != SENTINEL_TOKENS && coTokens[_coToken] != address(0), "no co-token");
         IERC20(_coToken).safeTransferFrom(msg.sender, address(this), _amount);
         crosschainToken.mint(_to, _amount);
     }
@@ -58,7 +64,7 @@ contract CrosschainERC20V2Wrapper is Ownable {
     }
 
     function withdrawTo(address _coToken, address _to, uint256 _amount) public {
-        require(coTokens[_coToken], "no co-token");
+        require(_coToken != SENTINEL_TOKENS && coTokens[_coToken] != address(0), "no co-token");
         require(_amount != 0, "amount is 0");
         crosschainToken.burnFrom(msg.sender, _amount);
         IERC20(_coToken).safeTransfer(_to, _amount);
