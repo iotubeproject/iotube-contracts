@@ -34,6 +34,9 @@ contract CrosschainERC20V2Wrapper is Ownable {
         require(coTokens[_coToken] == address(0), "already added");
        
         coTokens[_coToken] = coTokens[SENTINEL_TOKENS];
+        if (coTokens[_coToken] == address(0)) {
+            coTokens[_coToken] = SENTINEL_TOKENS;
+        }
         coTokens[SENTINEL_TOKENS] = _coToken;
         coTokenCount++;
         emit AddCoToken(_coToken);
