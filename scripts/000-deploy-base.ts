@@ -63,15 +63,15 @@ async function main() {
   await lordV2.addMinter(tube.address)
 
   const TubeRegistryFactory = await ethers.getContractFactory("TubeRegistry")
-  const tubeResistry = await upgrades.deployProxy(TubeRegistryFactory, [
+  const tubeRegistry = await upgrades.deployProxy(TubeRegistryFactory, [
     lordV2.address
   ]) as TubeRegistry;
-  await tubeResistry.deployed();
+  await tubeRegistry.deployed();
   console.log("TubeRegistry deployed to:", lordV2.address)
-  deployment["tubeResistry"] = tubeResistry.address
+  deployment["tubeRegistry"] = tubeRegistry.address
 
   const CrosschainERC20FactoryV2 = await ethers.getContractFactory("CrosschainERC20FactoryV2")
-  const cTokenFactory = await CrosschainERC20FactoryV2.deploy(tubeResistry.address)
+  const cTokenFactory = await CrosschainERC20FactoryV2.deploy(tubeRegistry.address)
   await cTokenFactory.deployed();
   console.log("CrosschainERC20FactoryV2 deployed to:", cTokenFactory.address)
   deployment["crosschainERC20Factory"] = cTokenFactory.address
