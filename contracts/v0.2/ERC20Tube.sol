@@ -130,7 +130,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         address _recipient,
         uint256 _amount
     ) public view returns (bytes32) {
-        return keccak256(abi.encodePacked(_srcTubeID, _nonce, _token, _amount, tubeID, _recipient));
+        return keccak256(abi.encodePacked(_srcTubeID, _nonce, tubeID, _token, _amount, _recipient));
     }
 
     function isSettled(bytes32 key) public view returns (bool) {
