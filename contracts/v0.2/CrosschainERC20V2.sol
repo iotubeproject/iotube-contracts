@@ -2,31 +2,26 @@
 
 pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts-upgradeable/token/ERC20/extensions/ERC20BurnableUpgradeable.sol";
+import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Burnable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
-contract CrosschainERC20V2 is ERC20BurnableUpgradeable {
+interface IMinterDAO {
+    function isMinter(address account, address token) external view returns (bool);
+}
+
+contract CrosschainERC20V2 is ERC20Burnable {
     using SafeERC20 for IERC20;
 
-    modifier onlyMinter() {
-        require(minter == msg.sender, "not the minter");
-        _;
-    }
-
-    IERC20 public coToken;
-    address public minter;
     uint8 private decimals_;
+    IMinterDAO public minterDAO;
 
-    function initialize(
-        IERC20 _coToken,
-        address _minter,
+    constructor(
+        address _minterDAO,
         string memory _name,
         string memory _symbol,
         uint8 _decimals
-    ) external initializer {
-        __ERC20_init(_name, _symbol);
-        coToken = _coToken;
-        minter = _minter;
+    ) ERC20(_name, _symbol) {
+        minterDAO = IMinterDAO(_minterDAO);
         decimals_  = _decimals;
     }
 
@@ -34,28 +29,8 @@ contract CrosschainERC20V2 is ERC20BurnableUpgradeable {
         return decimals_;
     }
 
-    function deposit(uint256 _amount) public {
-        depositTo(msg.sender, _amount);
-    }
-
-    function depositTo(address _to, uint256 _amount) public {
-        require(address(coToken) != address(0), "no co-token");
-        coToken.safeTransferFrom(msg.sender, address(this), _amount);
-        _mint(_to, _amount);
-    }
-
-    function withdraw(uint256 _amount) public {
-        withdrawTo(msg.sender, _amount);
-    }
-
-    function withdrawTo(address _to, uint256 _amount) public {
-        require(address(coToken) != address(0), "no co-token");
-        require(_amount != 0, "amount is 0");
-        _burn(msg.sender, _amount);
-        coToken.safeTransfer(_to, _amount);
-    }
-
-    function mint(address _to, uint256 _amount) public onlyMinter returns (bool) {
+    function mint(address _to, uint256 _amount) public returns (bool) {
+        require(minterDAO.isMinter(msg.sender, address(this)), "not the minter");
         require(_amount != 0, "amount is 0");
         _mint(_to, _amount);
         return true;

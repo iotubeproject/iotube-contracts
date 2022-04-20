@@ -3,6 +3,7 @@ import { ethers, network, upgrades } from "hardhat"
 
 import { LedgerV2 } from "../types/LedgerV2"
 import { LordV2 } from "../types/LordV2"
+import { TubeRegistry } from "../types/TubeRegistry"
 
 async function main() {
   const [deployer] = await ethers.getSigners()
@@ -44,13 +45,13 @@ async function main() {
   
   const ERC20Tube = await ethers.getContractFactory("ERC20Tube")
   const tube = await ERC20Tube.deploy(
-    0, // tubeID
+    process.env.TUBE_ID, // tubeID
     ledgerV2.address, // ledger
     lordV2.address, // lord
     verifier.address, // verifier
     tubeToken.address, // tubeToken
     deployer.address, // safe
-    1 // initNonce
+    process.env.INIT_NONCE // initNonce
   )
   await tube.deployed();
   console.log("ERC20Tube deployed to:", tube.address)
@@ -61,17 +62,19 @@ async function main() {
   // add minter
   await lordV2.addMinter(tube.address)
 
-  const CrosschainERC20V2 = await ethers.getContractFactory("CrosschainERC20V2")
-  const cToken = await CrosschainERC20V2.deploy()
-  await cToken.deployed();
-  console.log("cTokenTemplate deployed to:", cToken.address)
-  deployment["cTokenTemplate"] = cToken.address
+  const TubeRegistryFactory = await ethers.getContractFactory("TubeRegistry")
+  const tubeRegistry = await upgrades.deployProxy(TubeRegistryFactory, [
+    lordV2.address
+  ]) as TubeRegistry;
+  await tubeRegistry.deployed();
+  console.log("TubeRegistry deployed to:", lordV2.address)
+  deployment["tubeRegistry"] = tubeRegistry.address
 
   const CrosschainERC20FactoryV2 = await ethers.getContractFactory("CrosschainERC20FactoryV2")
-  const cTokenFactory = await CrosschainERC20FactoryV2.deploy(lordV2.address, cToken.address)
+  const cTokenFactory = await CrosschainERC20FactoryV2.deploy(tubeRegistry.address)
   await cTokenFactory.deployed();
   console.log("CrosschainERC20FactoryV2 deployed to:", cTokenFactory.address)
-  deployment["cTokenFactory"] = cTokenFactory.address
+  deployment["crosschainERC20Factory"] = cTokenFactory.address
 
   const ERC20TubeRouter = await ethers.getContractFactory("ERC20TubeRouter")
   const router = await ERC20TubeRouter.deploy(tube.address)
