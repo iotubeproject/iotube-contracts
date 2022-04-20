@@ -17,7 +17,8 @@ contract CrosschainERC20FactoryV2 is Ownable {
         uint8 decimals
     );
     event NewCrosschainERC20Wrapper(
-        address indexed token
+        address indexed token,
+        address indexed wrapper
     );
 
     address public tubeRegistry;
@@ -51,7 +52,7 @@ contract CrosschainERC20FactoryV2 is Ownable {
 
         CrosschainERC20V2Wrapper wrapper = new CrosschainERC20V2Wrapper(address(cc));
         Ownable(address(wrapper)).transferOwnership(msg.sender);
-        emit NewCrosschainERC20Wrapper(address(cc));
+        emit NewCrosschainERC20Wrapper(address(cc), address(wrapper));
 
         return (address(cc), address(wrapper));
     }
