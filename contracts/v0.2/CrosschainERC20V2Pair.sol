@@ -14,8 +14,6 @@ interface IERC20Mintable {
 contract CrosschainERC20V2Pair is Ownable {
     using SafeERC20 for IERC20;
 
-    address internal constant SENTINEL_TOKENS = address(0x1);
-
     IERC20Mintable public crosschainToken;
     IERC20 public token;
 

@@ -18,7 +18,7 @@ describe("crosschain erc20 factory v2", () => {
     const factoryFactory = await ethers.getContractFactory("CrosschainERC20FactoryV2")
     const factory = await factoryFactory.deploy(ethers.constants.AddressZero) as CrosschainERC20FactoryV2
 
-    const createTokenTx = await factory.createForeignToken("Test Token", "TEST", 8)
+    const createTokenTx = await factory.createCrosschainERC20("Test Token", "TEST", 8)
     const { events } = await createTokenTx.wait()
 
     const cToken = tokenFactory.attach(events![0].args!.token) as CrosschainERC20V2
