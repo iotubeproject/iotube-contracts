@@ -78,9 +78,10 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
             tubeToken.safeTransferFrom(msg.sender, address(this), tubeFee);
             tubeToken.safeApprove(address(tube), _amount);
         }
-        pair.crosschainToken().safeApprove(address(tube), _amount);
-        tube.depositTo(address(pair.crosschainToken()), _amount, _tubeID, _recipient);
-        emit RelayFeeReceipt(msg.sender, address(pair.crosschainToken()), _tubeID, fee);
+        IERC20 crosschainToken = pair.crosschainToken();
+        crosschainToken.safeApprove(address(tube), _amount);
+        tube.depositTo(address(crosschainToken), _amount, _tubeID, _recipient);
+        emit RelayFeeReceipt(msg.sender, address(crosschainToken), _tubeID, fee);
     }
 
     function depositTo(
