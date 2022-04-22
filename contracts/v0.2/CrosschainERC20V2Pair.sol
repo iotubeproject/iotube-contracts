@@ -2,7 +2,6 @@
 
 pragma solidity >=0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IERC20Mintable {
@@ -11,10 +10,8 @@ interface IERC20Mintable {
     function burnFrom(address account, uint256 amount) external;
 }
 
-contract CrosschainERC20V2Pair is Ownable {
+contract CrosschainERC20V2Pair {
     using SafeERC20 for IERC20;
-
-    address internal constant SENTINEL_TOKENS = address(0x1);
 
     IERC20Mintable public crosschainToken;
     IERC20 public token;

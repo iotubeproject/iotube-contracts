@@ -1,25 +1,25 @@
 {
   "manifestVersion": "3.2",
   "admin": {
-    "address": "0x3eE3E46728d363BD37e3F6A58e261b318e3ea319",
-    "txHash": "0x3b47568cedde815fac08bcaa694480130291ff88c0504faf3fb801e595e0cbb7"
+    "address": "0x7ecA8707B499B55658C4C44c94fF577246f59CD8",
+    "txHash": "0x93ecee2a58627e3b260fe45d108e6b46243c3535bfe57a251546ff97ee875cae"
   },
   "proxies": [
     {
-      "address": "0x5c66CA52559ab955058d0F20F4d25Ba91C59c574",
-      "txHash": "0x97d477f29538ea440a076427a07553632ce3433b71f0412fc8141ef854c4f947",
+      "address": "0xf106337A650b20a6844770ADa87649Cfa5f467eE",
+      "txHash": "0x948d4a299c9ba925cf8380d5c31d9fc12a0f480ba30607010fff839d7ebe43d0",
       "kind": "transparent"
     },
     {
-      "address": "0xacE0Cd804076017b68B328B7A57b7a3EC6B6c57D",
-      "txHash": "0xe7040b192d8839c42515ac0f335c1a13531b8d86537c3827faba95626123c811",
+      "address": "0x29eAf758050b207Ce29FaD9f1700ea3A65E4EDe6",
+      "txHash": "0xf575d63e2265f46ad8a3fc546cc8402b14a867d3718c79a516326e3ef826f319",
       "kind": "transparent"
     }
   ],
   "impls": {
     "f79d66ae360336bcbd1934d5689724862ef3e0ec11bf7135a309152c7f7819c3": {
-      "address": "0x75783E62cB9D31090dA7dE542a220F1cc6a360e3",
-      "txHash": "0x12b8c6e136162f3ffccce06110de5b96c9832c46b513247cbd512ed3bd358496",
+      "address": "0x4B185597A9F7E01453cf02FAb16e35DD0E26ad4D",
+      "txHash": "0x32dd76bc43331efbc19115c23fa9de605dfda6bebb1d9bb5dcf540c41e250c81",
       "layout": {
         "storage": [
           {
@@ -91,9 +91,9 @@
         }
       }
     },
-    "12b5d7c68107f82e834874fd47f621e0615ba7f698263c1ce743048b2592153d": {
-      "address": "0xb50665bA0E78B117E647F9462986B0e7c0895fb3",
-      "txHash": "0xd047ca0d012d3de505510cc48c52f437f7dc66c145e4d1376b47ad94c57b0e5e",
+    "c117505c040c118974fda4852257ee25a7ceaaca253be30a2d399881bfce247a": {
+      "address": "0xa905C7c1a3C4EC5961b7d68Bd245a6F20118F4b6",
+      "txHash": "0xf8da4af6bb01cceac25ef5991c0e2c22d100adde87e3c70d45039e5e8c7600d0",
       "layout": {
         "storage": [
           {
@@ -141,16 +141,16 @@
             "offset": 0,
             "slot": "101",
             "type": "t_address",
-            "contract": "TubeRegistry",
-            "src": "contracts/v0.2/TubeRegistry.sol:15"
+            "contract": "MinterDAO",
+            "src": "contracts/v0.2/MinterDAO.sol:12"
           },
           {
-            "label": "wrappers",
+            "label": "minters",
             "offset": 0,
             "slot": "102",
-            "type": "t_mapping(t_address,t_address)",
-            "contract": "TubeRegistry",
-            "src": "contracts/v0.2/TubeRegistry.sol:16"
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "contract": "MinterDAO",
+            "src": "contracts/v0.2/MinterDAO.sol:13"
           }
         ],
         "types": {
@@ -170,8 +170,12 @@
             "label": "bool",
             "numberOfBytes": "1"
           },
-          "t_mapping(t_address,t_address)": {
-            "label": "mapping(address => address)",
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))",
             "numberOfBytes": "32"
           },
           "t_uint256": {

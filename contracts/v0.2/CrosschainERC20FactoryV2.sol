@@ -5,7 +5,7 @@ pragma solidity >=0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "./CrosschainERC20V2.sol";
-import "./CrosschainERC20V2Wrapper.sol";
+import "./CrosschainERC20V2Pair.sol";
 
 contract CrosschainERC20FactoryV2 is Ownable {
     using Address for address;
@@ -16,44 +16,41 @@ contract CrosschainERC20FactoryV2 is Ownable {
         string symbol,
         uint8 decimals
     );
-    event NewCrosschainERC20Wrapper(
+    event NewCrosschainERC20Pair(
+        address indexed crosschainToken,
         address indexed token,
-        address indexed wrapper
+        address indexed pair
     );
 
-    address public tubeRegistry;
+    address public minterDAO;
 
-    constructor(address _tubeRegistry) {
-        tubeRegistry = _tubeRegistry;
+    constructor(address _minterDAO) {
+        minterDAO = _minterDAO;
     }
 
-    function setTubeRegistry(address _tubeRegistry) external onlyOwner {
-        tubeRegistry = _tubeRegistry;
+    function setMinterDAO(address _minterDAO) external onlyOwner {
+        minterDAO = _minterDAO;
     }
 
-    function createForeignToken(
+    function createCrosschainERC20(
         string memory _name,
         string memory _symbol,
         uint8 _decimals
     ) external onlyOwner returns (address) {
-        CrosschainERC20V2 cc = new CrosschainERC20V2(tubeRegistry, _name, _symbol, _decimals);
+        CrosschainERC20V2 cc = new CrosschainERC20V2(minterDAO, _name, _symbol, _decimals);
         emit NewCrosschainERC20(address(cc), _name, _symbol, _decimals);
 
         return address(cc);
     }
 
-    function createLocalToken(
-        string memory _name,
-        string memory _symbol,
-        uint8 _decimals
-    ) external onlyOwner returns (address, address) {
-        CrosschainERC20V2 cc = new CrosschainERC20V2(tubeRegistry, _name, _symbol, _decimals);
-        emit NewCrosschainERC20(address(cc), _name, _symbol, _decimals);
+    function createCrosschainERC20Pair(
+        address _crosschainToken,
+        address _coToken
+    ) external onlyOwner returns (address) {
+        CrosschainERC20V2Pair wrapper = new CrosschainERC20V2Pair(_crosschainToken, _coToken);
+        emit NewCrosschainERC20Pair(_crosschainToken, _coToken, address(wrapper));
 
-        CrosschainERC20V2Wrapper wrapper = new CrosschainERC20V2Wrapper(address(cc));
-        Ownable(address(wrapper)).transferOwnership(msg.sender);
-        emit NewCrosschainERC20Wrapper(address(cc), address(wrapper));
-
-        return (address(cc), address(wrapper));
+        // TODO add to minter dao? need owner!
+        return address(wrapper);
     }
 }

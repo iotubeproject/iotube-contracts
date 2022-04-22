@@ -3,7 +3,7 @@ import { ethers, network, upgrades } from "hardhat"
 
 import { LedgerV2 } from "../types/LedgerV2"
 import { LordV2 } from "../types/LordV2"
-import { TubeRegistry } from "../types/TubeRegistry"
+import { MinterDAO } from "../types/MinterDAO"
 
 async function main() {
   const [deployer] = await ethers.getSigners()
@@ -37,7 +37,7 @@ async function main() {
   console.log("LedgerV2 deployed to:", ledgerV2.address)
   deployment["ledger"] = ledgerV2.address
 
-  const Verifier = await ethers.getContractFactory("Verifier")
+  const Verifier = await ethers.getContractFactory("VerifierV2")
   const verifier = await Verifier.deploy()
   await verifier.deployed();
   console.log("Verifier deployed to:", verifier.address)
@@ -62,16 +62,16 @@ async function main() {
   // add minter
   await lordV2.addMinter(tube.address)
 
-  const TubeRegistryFactory = await ethers.getContractFactory("TubeRegistry")
-  const tubeRegistry = await upgrades.deployProxy(TubeRegistryFactory, [
+  const MinterDAOFactory = await ethers.getContractFactory("MinterDAO")
+  const minterDAO = await upgrades.deployProxy(MinterDAOFactory, [
     lordV2.address
-  ]) as TubeRegistry;
-  await tubeRegistry.deployed();
-  console.log("TubeRegistry deployed to:", lordV2.address)
-  deployment["tubeRegistry"] = tubeRegistry.address
+  ]) as MinterDAO;
+  await minterDAO.deployed();
+  console.log("MinterDAO deployed to:", lordV2.address)
+  deployment["minterDAO"] = minterDAO.address
 
   const CrosschainERC20FactoryV2 = await ethers.getContractFactory("CrosschainERC20FactoryV2")
-  const cTokenFactory = await CrosschainERC20FactoryV2.deploy(tubeRegistry.address)
+  const cTokenFactory = await CrosschainERC20FactoryV2.deploy(minterDAO.address)
   await cTokenFactory.deployed();
   console.log("CrosschainERC20FactoryV2 deployed to:", cTokenFactory.address)
   deployment["crosschainERC20Factory"] = cTokenFactory.address

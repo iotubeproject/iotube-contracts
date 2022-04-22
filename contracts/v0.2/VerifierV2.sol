@@ -14,6 +14,18 @@ contract VerifierV2 is Ownable, Pausable {
     address[] public validators;
     mapping(address => uint8) private validatorIndexes;
 
+    constructor() {
+        _pause();
+    }
+
+    function pause() external onlyOwner {
+        _pause();
+    }
+
+    function unpause() external onlyOwner  {
+        _unpause();
+    }
+
     function size() public view returns (uint256) {
         return validators.length;
     }
