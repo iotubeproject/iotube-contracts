@@ -12,7 +12,7 @@ async function main() {
 
   const TubeToken = await ethers.getContractFactory("TubeToken")
   const tubeToken = await TubeToken.deploy()
-  await tubeToken.deployed();
+  await tubeToken.deployed()
   console.log("TubeToken deployed to:", tubeToken.address)
   deployment["tubeToken"] = tubeToken.address
 
@@ -21,15 +21,23 @@ async function main() {
     // 51840, // 3 days
     1, // 5 seconds
   ]) as LordV2;
-  await lordV2.deployed();
+  await lordV2.deployed()
   console.log("LordV2 deployed to:", lordV2.address)
   deployment["lord"] = lordV2.address
 
-  const AssetRegistryV2 = await ethers.getContractFactory("AssetRegistryV2")
-  const assetRegistryV2 = await AssetRegistryV2.deploy()
-  await assetRegistryV2.deployed();
-  console.log("AssetRegistryV2 deployed to:", assetRegistryV2.address)
-  deployment["assetRegistry"] = assetRegistryV2.address
+  const { chainId } = await ethers.provider.getNetwork()
+  if (chainId == 4690 || chainId == 4689) {
+    const AssetRegistryV2 = await ethers.getContractFactory("AssetRegistryV2")
+    const assetRegistryV2 = await AssetRegistryV2.deploy()
+    await assetRegistryV2.deployed()
+    console.log("AssetRegistryV2 deployed to:", assetRegistryV2.address)
+    deployment["assetRegistry"] = assetRegistryV2.address
+
+    const ValidatorRegistry = await ethers.getContractFactory("ValidatorRegistry")
+    const validatorRegistry = await ValidatorRegistry.deploy()
+    console.log("ValidatorRegistry deployed to:", validatorRegistry.address)
+    deployment["validatorRegistry"] = validatorRegistry.address
+  }
 
   const LedgerV2Factory = await ethers.getContractFactory("LedgerV2")
   const ledgerV2 = await LedgerV2Factory.deploy() as LedgerV2
@@ -53,7 +61,7 @@ async function main() {
     deployer.address, // safe
     process.env.INIT_NONCE // initNonce
   )
-  await tube.deployed();
+  await tube.deployed()
   console.log("ERC20Tube deployed to:", tube.address)
   deployment["tube"] = tube.address
 
@@ -66,13 +74,13 @@ async function main() {
   const minterDAO = await upgrades.deployProxy(MinterDAOFactory, [
     lordV2.address
   ]) as MinterDAO;
-  await minterDAO.deployed();
+  await minterDAO.deployed()
   console.log("MinterDAO deployed to:", lordV2.address)
   deployment["minterDAO"] = minterDAO.address
 
   const CrosschainERC20FactoryV2 = await ethers.getContractFactory("CrosschainERC20FactoryV2")
   const cTokenFactory = await CrosschainERC20FactoryV2.deploy(minterDAO.address)
-  await cTokenFactory.deployed();
+  await cTokenFactory.deployed()
   console.log("CrosschainERC20FactoryV2 deployed to:", cTokenFactory.address)
   deployment["crosschainERC20Factory"] = cTokenFactory.address
 

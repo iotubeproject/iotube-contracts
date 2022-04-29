@@ -11,8 +11,8 @@ async function main() {
     const amount = process.env.AMOUNT || ethers.utils.parseEther("1").toString()
 
     const key = ethers.utils.solidityKeccak256(
-        ["uint256", "uint256", "address", "uint256", "uint256", "address"],
-        [srcTubeId, nonce, token, amount, tubeId, recipient]
+        ["uint256", "uint256", "uint256", "address", "uint256", "address"],
+        [srcTubeId, nonce, tubeId, token, amount, recipient]
     )
 
     const privateKey = process.env.PRIVATE_KEY
