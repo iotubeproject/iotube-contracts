@@ -85,7 +85,8 @@ async function main() {
   deployment["crosschainERC20Factory"] = cTokenFactory.address
 
   const ERC20TubeRouter = await ethers.getContractFactory("ERC20TubeRouter")
-  const router = await ERC20TubeRouter.deploy(tube.address)
+  // use deployer's address as default safe address
+  const router = await ERC20TubeRouter.deploy(tube.address, deployer.address)
   await router.deployed();
   console.log("ERC20TubeRouter deployed to:", router.address)
   deployment["erc20TubeRouter"] = router.address

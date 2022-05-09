@@ -33,10 +33,12 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
 
     mapping(uint256 => uint256) private relayFees;
     address public feeToken;
+    address payable public safe;
     ITube public tube;
 
-    constructor(ITube _tube) {
+    constructor(ITube _tube, address payable _safe) {
         tube = _tube;
+        safe = _safe;
     }
 
     function setRelayFee(uint256 _tubeID, uint256 _fee) external onlyOwner {
@@ -45,6 +47,10 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
 
     function setFeeToken(address _feeToken) external onlyOwner {
         feeToken = _feeToken;
+    }
+
+    function setSafe(address payable _safe) external onlyOwner {
+        safe = _safe;
     }
 
     function relayFee(uint256 _tubeID) external view returns (uint256) {
@@ -61,8 +67,9 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
         require(fee > 0, "unset relay fee");
         if (feeToken == address(0)) {
             require(msg.value >= fee, "insufficient relay fee");
+            safe.transfer(msg.value);
         } else {
-            IERC20(feeToken).safeTransferFrom(msg.sender, address(this), fee);
+            IERC20(feeToken).safeTransferFrom(msg.sender, safe, fee);
         }
 
         ICrosschainERC20V2Pair pair = ICrosschainERC20V2Pair(_crosschainERC20Pair);
@@ -94,8 +101,9 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
         require(fee > 0, "unset relay fee");
         if (feeToken == address(0)) {
             require(msg.value >= fee, "insufficient relay fee");
+            safe.transfer(msg.value);
         } else {
-            IERC20(feeToken).safeTransferFrom(msg.sender, address(this), fee);
+            IERC20(feeToken).safeTransferFrom(msg.sender, safe, fee);
         }
 
         uint256 tubeFee = tube.fees(_tubeID);
