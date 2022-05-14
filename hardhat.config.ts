@@ -45,6 +45,11 @@ export default {
       saveDeployments: true,
       chainId: 1,
     },
+    iotex: {
+        url: 'https://babel-api.mainnet.iotex.io',
+        accounts: accounts,
+        chainId: 4689,
+    },
     iotex_test: {
         url: 'https://babel-api.testnet.iotex.io',
         accounts: accounts,
