@@ -31,8 +31,7 @@ interface IVerifier {
 contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
-    event FeeUpdated(uint256 tubeID, uint256 fee);
-    event TaxRateUpdated(uint256 rate);
+    event TubeInfoUpdated(uint256 tubeID, uint256 feeRate, bool enabled);
     event Settled(bytes32 indexed key, address[] validators);
     event Receipt(
         uint256 indexed nonce,
@@ -43,23 +42,24 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         address recipient,
         uint256 fee
     );
+    struct TubeInfo {
+        uint256 rate;
+        bool enabled;
+    }
 
     uint256 public tubeID;
     ILedger public ledger;
     ILord public lord;
     IVerifier public verifier;
-    IERC20 public tubeToken;
     address public safe;
     uint256 public nonce;
-    uint256 public taxRate;
-    mapping(uint256 => uint256) public fees;
+    mapping(uint256 => TubeInfo) private tubeInfos;
 
     constructor(
         uint256 _tubeID,
         ILedger _ledger,
         ILord _lord,
         IVerifier _verifier,
-        IERC20 _tubeToken,
         address _safe,
         uint256 _initNonce
     ) ReentrancyGuard() {
@@ -67,7 +67,6 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         ledger = _ledger;
         lord = _lord;
         verifier = _verifier;
-        tubeToken = _tubeToken;
         safe = _safe;
         nonce = _initNonce;
     }
@@ -80,15 +79,14 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         _unpause();
     }
 
-    function setFee(uint256 _tubeID, uint256 _fee) public whenPaused onlyOwner {
-        fees[_tubeID] = _fee;
-        emit FeeUpdated(_tubeID, _fee);
+    function destinationTubeInfo(uint256 _tubeID) public view returns (TubeInfo memory) {
+        return tubeInfos[_tubeID];
     }
 
-    function setTaxRate(uint16 _taxRate) public whenPaused onlyOwner {
-        require(_taxRate <= 10000, "invalid tax rate");
-        taxRate = _taxRate;
-        emit TaxRateUpdated(_taxRate);
+    function setDestinationTube(uint256 _tubeID, uint256 _feeRate, bool _enabled) public whenPaused onlyOwner {
+        require(_feeRate <= 10000, "invalid fee rate");
+        tubeInfos[_tubeID] = TubeInfo(_feeRate, _enabled);
+        emit TubeInfoUpdated(_tubeID, _feeRate, _enabled);
     }
 
     function depositTo(
@@ -100,15 +98,14 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         require(_to != address(0), "invalid recipient");
         require(_amount > 0, "invalid amount");
         // TODO: a whitelist of token?
-        uint256 fee = fees[_targetTubeID];
-        if (fee > 0) {
-            tubeToken.safeTransferFrom(msg.sender, safe, fee);
-        }
-        if (taxRate > 0) {
-            uint256 tax = _amount * taxRate / 10000;
-            if (tax > 0) {
-                _amount -= tax;
-                IERC20(_token).transferFrom(msg.sender, safe, tax);
+        TubeInfo memory dst = tubeInfos[_targetTubeID];
+        require(dst.enabled, "invalid destination");
+        uint256 fee = 0;
+        if (dst.rate > 0) {
+            fee = _amount * dst.rate / 10000;
+            if (fee > 0) {
+                _amount -= fee;
+                IERC20(_token).transferFrom(msg.sender, safe, fee);
             }
         }
         IBurnableERC20(_token).burnFrom(msg.sender, _amount);
