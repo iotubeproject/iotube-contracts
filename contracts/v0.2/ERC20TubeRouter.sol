@@ -72,12 +72,6 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
         token.safeApprove(_crosschainERC20Pair, _amount);
         pair.deposit(_amount);
 
-        uint256 tubeFee = tube.fees(_tubeID);
-        if (tubeFee > 0) {
-            IERC20 tubeToken = tube.tubeToken();
-            tubeToken.safeTransferFrom(msg.sender, address(this), tubeFee);
-            tubeToken.safeApprove(address(tube), _amount);
-        }
         IERC20 crosschainToken = pair.crosschainToken();
         crosschainToken.safeApprove(address(tube), _amount);
         tube.depositTo(address(crosschainToken), _amount, _tubeID, _recipient);
@@ -97,12 +91,6 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
             safe.transfer(msg.value);
         }
 
-        uint256 tubeFee = tube.fees(_tubeID);
-        if (tubeFee > 0) {
-            IERC20 tubeToken = tube.tubeToken();
-            tubeToken.safeTransferFrom(msg.sender, address(this), tubeFee);
-            tubeToken.safeApprove(address(tube), _amount);
-        }
         IERC20(_crosschainToken).safeTransferFrom(msg.sender, address(this), _amount);
         IERC20(_crosschainToken).safeApprove(address(tube), _amount);
         tube.depositTo(_crosschainToken, _amount, _tubeID, _recipient);
