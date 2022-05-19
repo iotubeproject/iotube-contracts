@@ -11,27 +11,10 @@ async function main() {
   const deployment = {}
 
   const LordV2Factory = await ethers.getContractFactory("LordV2")
-  const lordV2 = await upgrades.deployProxy(LordV2Factory, [
-    // 51840, // 3 days
-    1, // 5 seconds
-  ]) as LordV2;
+  const lordV2 = await upgrades.deployProxy(LordV2Factory, []) as LordV2;
   await lordV2.deployed()
   console.log("LordV2 deployed to:", lordV2.address)
   deployment["lord"] = lordV2.address
-
-  const { chainId } = await ethers.provider.getNetwork()
-  if (chainId == 4690 || chainId == 4689) {
-    const AssetRegistryV2 = await ethers.getContractFactory("AssetRegistryV2")
-    const assetRegistryV2 = await AssetRegistryV2.deploy()
-    await assetRegistryV2.deployed()
-    console.log("AssetRegistryV2 deployed to:", assetRegistryV2.address)
-    deployment["assetRegistry"] = assetRegistryV2.address
-
-    const ValidatorRegistry = await ethers.getContractFactory("ValidatorRegistry")
-    const validatorRegistry = await ValidatorRegistry.deploy()
-    console.log("ValidatorRegistry deployed to:", validatorRegistry.address)
-    deployment["validatorRegistry"] = validatorRegistry.address
-  }
 
   const LedgerV2Factory = await ethers.getContractFactory("LedgerV2")
   const ledgerV2 = await LedgerV2Factory.deploy() as LedgerV2
@@ -65,7 +48,8 @@ async function main() {
 
   const MinterDAOFactory = await ethers.getContractFactory("MinterDAO")
   const minterDAO = await upgrades.deployProxy(MinterDAOFactory, [
-    lordV2.address
+    lordV2.address,
+    deployer.address
   ]) as MinterDAO;
   await minterDAO.deployed()
   console.log("MinterDAO deployed to:", lordV2.address)

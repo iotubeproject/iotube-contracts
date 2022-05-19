@@ -12,34 +12,31 @@ interface IERC20Mintable {
 }
 
 contract LordV2 is Initializable, OwnedUpgradeable {
-    event MinterAdded(address indexed minter, uint256 effectiveBlock);
-    event MinterRemoved(address indexed minter);
+    event OperatorAdded(address indexed operator);
+    event OperatorRemoved(address indexed operator);
 
-    mapping(address => uint256) public minters;
+    mapping(address => bool) private operators;
 
-    uint256 public waitingBlocks;
-
-    function initialize(uint256 _waitingBlocks) public initializer {
+    function initialize() public initializer {
         __Owned_init();
-        waitingBlocks = _waitingBlocks;
     }
 
-    function addMinter(address _minter) public onlyOwner {
-        if (minters[_minter] == 0) {
-            minters[_minter] = block.number + waitingBlocks;
-            emit MinterAdded(_minter, block.number + waitingBlocks);
+    function addOperator(address _operator) public onlyOwner {
+        if (operators[_operator] == false) {
+            operators[_operator] = true;
+            emit OperatorAdded(_operator);
         }
     }
 
-    function removeMinter(address _minter) public onlyOwner {
-        if (minters[_minter] > 0) {
-            minters[_minter] = 0;
-            emit MinterRemoved(_minter);
+    function removeOperator(address _operator) public onlyOwner {
+        if (operators[_operator] == true) {
+            operators[_operator] = false;
+            emit OperatorRemoved(_operator);
         }
     }
 
-    function isMinter(address _minter) public view returns (bool) {
-        return minters[_minter] > 0 && minters[_minter] <= block.number;
+    function isOperator(address _operator) public view returns (bool) {
+        return operators[_operator];
     }
 
     function mint(
@@ -47,7 +44,7 @@ contract LordV2 is Initializable, OwnedUpgradeable {
         address _recipient,
         uint256 _amount
     ) public {
-        require(isMinter(msg.sender), "invalid minter");
+        require(isOperator(msg.sender), "invalid operator");
         _token.mint(_recipient, _amount);
     }
 }
