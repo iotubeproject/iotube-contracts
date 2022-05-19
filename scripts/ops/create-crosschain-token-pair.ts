@@ -1,21 +1,37 @@
 import * as fs from "fs";
 import { ethers, network, upgrades } from "hardhat"
+import { CrosschainERC20FactoryV2 } from "../../types/CrosschainERC20FactoryV2";
 
 async function main() {
-  const [deployer] = await ethers.getSigners()
+  const deployments = JSON.parse(fs.readFileSync(`./deployments/${network.name}.json`).toString())
 
-  const deployment = {}
+  const CrosschainERC20FactoryV2Factory = await ethers.getContractFactory("CrosschainERC20FactoryV2")
+  const factory = CrosschainERC20FactoryV2Factory.attach(deployments.crosschainERC20Factory) as CrosschainERC20FactoryV2
 
-  const MockToken = await ethers.getContractFactory("MockToken")
-  let token = await MockToken.deploy("BUSD", "BUSD", 18)
-  await token.deployed();
-  console.log("BUSD deployed to:", token.address)
-  token = await MockToken.deploy("USDT", "USDT", 6)
-  await token.deployed();
-  console.log("USDT deployed to:", token.address)
-  token = await MockToken.deploy("USDC", "USDC", 6)
-  await token.deployed();
-  console.log("USDC deployed to:", token.address)
+  const tokenName = "cUSDT"
+  if (!deployments.crosschainToken[tokenName]) {
+    console.log("please create cToken first")
+    return
+  }
+  const createTx = await factory.createCrosschainERC20Pair(
+    deployments.crosschainToken[tokenName], // cUSDT
+    "0x0C3bf65c8D5ddf40cf4BDFa83982626c4436A051", // ioUSDT
+  )
+  const receipt = await createTx.wait()
+  if (receipt.status === 1) {
+    const log = CrosschainERC20FactoryV2Factory.interface.parseLog(receipt.logs[0])
+    if(!deployments.pairs) {
+      deployments.pairs = {}
+    }
+    if(!deployments.pairs[tokenName]) {
+      deployments.pairs[tokenName] = []
+    }
+    deployments.pairs[tokenName].push(log.args.pair)
+    console.log(`create crosschain token pair deployed at ${log.args.pair}`)
+  } else {
+    console.log("create crosschain token pair fail")
+  }
+  fs.writeFileSync(`./deployments/${network.name}.json`, JSON.stringify(deployments, null, 4))
 }
 
 main()

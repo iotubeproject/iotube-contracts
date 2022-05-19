@@ -59,7 +59,17 @@ export default {
         url: 'https://api.avax-test.network/ext/bc/C/rpc',
         accounts: accounts,
         chainId: 43113,
-    }
+    },
+    bsc: {
+        url: 'https://bsc-dataseed.binance.org',
+        accounts: accounts,
+        chainId: 56,
+    },
+    polygon: {
+        url: 'https://rpc-mainnet.matic.network/',
+        accounts: accounts,
+        chainId: 137,
+    },
   },
   solidity: {
     compilers: [{
