@@ -1,7 +1,7 @@
 import * as fs from "fs";
 import { ethers, network, upgrades } from "hardhat"
-import { LedgerV2 } from "../types/LedgerV2";
-import { LordV2 } from "../types/LordV2";
+import { LedgerV2 } from "../../types/LedgerV2";
+import { LordV2 } from "../../types/LordV2";
 
 async function main() {
   const [deployer] = await ethers.getSigners()
@@ -19,8 +19,7 @@ async function main() {
     deployments.ledger, // ledger
     deployments.lord, // lord
     deployments.verifier, // verifier
-    deployments.tubeToken, // tubeToken
-    deployer.address, // safe
+    process.env.SAFE, // safe
     process.env.INIT_NONCE // initNonce
   )
   await tube.deployed();

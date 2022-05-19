@@ -10,12 +10,6 @@ async function main() {
 
   const deployment = {}
 
-  const TubeToken = await ethers.getContractFactory("TubeToken")
-  const tubeToken = await TubeToken.deploy()
-  await tubeToken.deployed()
-  console.log("TubeToken deployed to:", tubeToken.address)
-  deployment["tubeToken"] = tubeToken.address
-
   const LordV2Factory = await ethers.getContractFactory("LordV2")
   const lordV2 = await upgrades.deployProxy(LordV2Factory, [
     // 51840, // 3 days
@@ -57,8 +51,7 @@ async function main() {
     ledgerV2.address, // ledger
     lordV2.address, // lord
     verifier.address, // verifier
-    tubeToken.address, // tubeToken
-    deployer.address, // safe
+    process.env.SAFE, // safe
     process.env.INIT_NONCE // initNonce
   )
   await tube.deployed()
