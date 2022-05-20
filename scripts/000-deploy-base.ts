@@ -43,8 +43,6 @@ async function main() {
 
   // add operator
   await ledgerV2.addOperator(tube.address)
-  // add minter
-  await lordV2.addMinter(tube.address)
 
   const MinterDAOFactory = await ethers.getContractFactory("MinterDAO")
   const minterDAO = await upgrades.deployProxy(MinterDAOFactory, [
