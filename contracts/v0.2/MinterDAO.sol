@@ -3,9 +3,9 @@
 pragma solidity >=0.8.0;
 
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-contract MinterDAO is OwnableUpgradeable, Pausable {
+contract MinterDAO is OwnableUpgradeable, PausableUpgradeable {
     event NewLord(address indexed lord);
     event MinterAdded(address indexed minter, address indexed token);
     event MinterRemoved(address indexed minter, address indexed token);
@@ -21,6 +21,7 @@ contract MinterDAO is OwnableUpgradeable, Pausable {
 
     function initialize(address _lord, address _emergencyOperator) public initializer {
         __Ownable_init();
+        __Pausable_init();
         lord = _lord;
         emergencyOperator = _emergencyOperator;
         emit NewLord(_lord);
@@ -50,13 +51,5 @@ contract MinterDAO is OwnableUpgradeable, Pausable {
 
     function unpause() external onlyEmergencyOperator {
         _unpause();
-    }
-
-    function _msgSender() internal view override(Context, ContextUpgradeable) returns (address) {
-        return msg.sender;
-    }
-
-    function _msgData() internal pure override(Context, ContextUpgradeable) returns (bytes calldata) {
-        return msg.data;
     }
 }
