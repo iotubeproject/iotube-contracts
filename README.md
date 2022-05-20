@@ -1,4 +1,4 @@
-# iotube contracts 
+# iotube contracts
 
 ## Develop
 
@@ -12,4 +12,15 @@ yarn test
 ```
 npm install -g @remix-project/remixd
 remixd -s .  --remix-ide https://remix.ethereum.org
+```
+
+
+## Deployment
+
+```
+export TUBE_ID=
+export INIT_NONCE=
+export SAFE=
+
+yarn hardhat run scripts/000-deploy-base.ts
 ```
