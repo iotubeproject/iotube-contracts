@@ -45,9 +45,11 @@ contract CrosschainERC20FactoryV2 is Ownable {
 
     function createCrosschainERC20Pair(
         address _crosschainToken,
-        address _token
+        uint8 _crosschainTokenDecimals,
+        address _token,
+        uint8 _tokenDecimals
     ) external onlyOwner returns (address) {
-        CrosschainERC20V2Pair wrapper = new CrosschainERC20V2Pair(_crosschainToken, _token);
+        CrosschainERC20V2Pair wrapper = new CrosschainERC20V2Pair(_crosschainToken, _crosschainTokenDecimals, _token, _tokenDecimals);
         emit NewCrosschainERC20Pair(_crosschainToken, _token, address(wrapper));
 
         // TODO add to minter dao? need owner!

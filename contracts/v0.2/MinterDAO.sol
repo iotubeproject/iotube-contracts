@@ -2,28 +2,23 @@
 
 pragma solidity >=0.8.0;
 
+import "./EmergencyOperator.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-contract MinterDAO is OwnableUpgradeable, PausableUpgradeable {
+contract MinterDAO is OwnableUpgradeable, PausableUpgradeable, EmergencyOperator {
     event NewLord(address indexed lord);
     event MinterAdded(address indexed minter, address indexed token);
     event MinterRemoved(address indexed minter, address indexed token);
 
     address public lord;
-    address public emergencyOperator;
     mapping(address => mapping(address => bool)) private minters;
-
-    modifier onlyEmergencyOperator() {
-        require(emergencyOperator == _msgSender(), "caller is not emergency operator");
-        _;
-    }
 
     function initialize(address _lord, address _emergencyOperator) public initializer {
         __Ownable_init();
         __Pausable_init();
         lord = _lord;
-        emergencyOperator = _emergencyOperator;
+        _setEmergencyOperator(_emergencyOperator);
         emit NewLord(_lord);
     }
 
@@ -38,7 +33,7 @@ contract MinterDAO is OwnableUpgradeable, PausableUpgradeable {
     }
 
     function setEmergencyOperator(address _emergencyOperator) external onlyOwner {
-        emergencyOperator = _emergencyOperator;
+        _setEmergencyOperator(_emergencyOperator);
     }
 
     function isMinter(address _account, address _token) external view whenNotPaused returns (bool) {

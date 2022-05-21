@@ -2,6 +2,7 @@
 
 pragma solidity >=0.8.0;
 
+import "./EmergencyOperator.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
@@ -28,7 +29,7 @@ interface IVerifier {
         returns (bool isValid_, address[] memory validators_);
 }
 
-contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
+contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
     using SafeERC20 for IERC20;
 
     event TubeInfoUpdated(uint256 tubeID, uint256 feeRate, bool enabled);
@@ -71,22 +72,8 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         nonce = _initNonce;
     }
 
-    function pause() public onlyOwner {
-        _pause();
-    }
-
-    function unpause() public onlyOwner {
-        _unpause();
-    }
-
     function destinationTubeInfo(uint256 _tubeID) public view returns (TubeInfo memory) {
         return tubeInfos[_tubeID];
-    }
-
-    function setDestinationTube(uint256 _tubeID, uint256 _feeRate, bool _enabled) public whenPaused onlyOwner {
-        require(_feeRate <= 10000, "invalid fee rate");
-        tubeInfos[_tubeID] = TubeInfo(_feeRate, _enabled);
-        emit TubeInfoUpdated(_tubeID, _feeRate, _enabled);
     }
 
     function depositTo(
@@ -153,6 +140,12 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         emit Settled(key, signers);
     }
 
+    function setDestinationTube(uint256 _tubeID, uint256 _feeRate, bool _enabled) public onlyOwner {
+        require(_feeRate <= 10000, "invalid fee rate");
+        tubeInfos[_tubeID] = TubeInfo(_feeRate, _enabled);
+        emit TubeInfoUpdated(_tubeID, _feeRate, _enabled);
+    }
+
     function withdrawCoin(address payable _to) external onlyOwner {
         Address.sendValue(_to, address(this).balance);
     }
@@ -164,11 +157,23 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
         }
     }
 
+    function setEmergencyOperator(address _operator) external onlyOwner {
+        _setEmergencyOperator(_operator);
+    }
+
     function setLord(ILord _lord) external onlyOwner {
         lord = _lord;
     }
 
     function setSafe(address _safe) external onlyOwner {
         safe = _safe;
+    }
+
+    function pause() public onlyEmergencyOperator {
+        _pause();
+    }
+
+    function unpause() public onlyEmergencyOperator {
+        _unpause();
     }
 }

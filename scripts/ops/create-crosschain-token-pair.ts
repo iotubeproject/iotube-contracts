@@ -15,7 +15,9 @@ async function main() {
   }
   const createTx = await factory.createCrosschainERC20Pair(
     deployments.crosschainToken[tokenName], // cUSDT
+    8,
     "0x0C3bf65c8D5ddf40cf4BDFa83982626c4436A051", // ioUSDT
+    8,
   )
   const receipt = await createTx.wait()
   if (receipt.status === 1) {

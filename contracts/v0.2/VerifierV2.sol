@@ -2,10 +2,11 @@
 
 pragma solidity >=0.8.0;
 
+import "./EmergencyOperator.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract VerifierV2 is Ownable, Pausable {
+contract VerifierV2 is Ownable, Pausable, EmergencyOperator {
     event ValidatorAdded(address indexed validator);
     event ValidatorRemoved(address indexed validator);
 
@@ -18,11 +19,11 @@ contract VerifierV2 is Ownable, Pausable {
         _pause();
     }
 
-    function pause() external onlyOwner {
+    function pause() external onlyEmergencyOperator {
         _pause();
     }
 
-    function unpause() external onlyOwner  {
+    function unpause() external onlyEmergencyOperator  {
         _unpause();
     }
 
@@ -41,7 +42,11 @@ contract VerifierV2 is Ownable, Pausable {
         }
     }
 
-    function addAll(address[] memory _validators) public onlyOwner whenPaused {
+    function setEmergencyOperator(address _operator) public onlyOwner {
+        _setEmergencyOperator(_operator);
+    }
+
+    function addAll(address[] memory _validators) public onlyOwner {
         require(validators.length + _validators.length < VALIDATOR_LIMIT, "hit max validator limit");
         address validator;
         for (uint256 i = 0; i < _validators.length; i++) {
@@ -56,7 +61,7 @@ contract VerifierV2 is Ownable, Pausable {
         }
     }
 
-    function removeAll(address[] memory _validators) public onlyOwner whenPaused {
+    function removeAll(address[] memory _validators) public onlyOwner {
         address validator;
         address last;
         uint8 index;
