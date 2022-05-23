@@ -53,7 +53,7 @@ contract CrosschainERC20V2Pair {
 
 
     function depositNoRounding(uint256 _amount) external {
-        depositTo(msg.sender, _amount);
+        depositToNoRounding(msg.sender, _amount);
     }
 
     function depositToNoRounding(address _to, uint256 _amount) public {
