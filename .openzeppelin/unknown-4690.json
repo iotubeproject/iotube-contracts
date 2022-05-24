@@ -14,6 +14,21 @@
       "address": "0x2700331A39Bad33009BFdD7aB8ee01d701c830e9",
       "txHash": "0xca44eea9c2580d46bec6af9ba6eadcc5f5beb6df40e7bcdc5ec3c9497c0faff1",
       "kind": "transparent"
+    },
+    {
+      "address": "0xCa69C7d932a23a14B3A3C0bF23ABe403684EEf19",
+      "txHash": "0x12ab12942e467f9c00fce27e9ea504b340945b058d227c3178d2eb2136bf7bcc",
+      "kind": "transparent"
+    },
+    {
+      "address": "0xA543B78bA022b190A91A8FcCeff978daD996c6B9",
+      "txHash": "0x6e683bd8c1d128e2e8376552715afe2d078608f6664c7c93f79a69b67c2d8318",
+      "kind": "transparent"
+    },
+    {
+      "address": "0x2843A457e3cEEb02e55048b7906597A903d0AA12",
+      "txHash": "0xc0d4f51e41e710be234cfa85635c1f5fbced333957ad10271673bfa47bd7bef3",
+      "kind": "transparent"
     }
   ],
   "impls": {
@@ -151,6 +166,186 @@
             "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
             "contract": "MinterDAO",
             "src": "contracts/v0.2/MinterDAO.sol:13"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_array(t_uint256)49_storage": {
+            "label": "uint256[49]",
+            "numberOfBytes": "1568"
+          },
+          "t_array(t_uint256)50_storage": {
+            "label": "uint256[50]",
+            "numberOfBytes": "1600"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          },
+          "t_mapping(t_address,t_mapping(t_address,t_bool))": {
+            "label": "mapping(address => mapping(address => bool))",
+            "numberOfBytes": "32"
+          },
+          "t_uint256": {
+            "label": "uint256",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    "4e46c85ed299f3a3b2861d7525659fd787d2e478b7089af671b64ad14cd73b45": {
+      "address": "0x931e4040338d91B881d35e30a0A7B8c4cF747538",
+      "txHash": "0x585910a1ba5e1b2a52016db7d7f3daf4079a774f8d488556a5b09afe9ea61aa4",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "owner",
+            "offset": 2,
+            "slot": "0",
+            "type": "t_address",
+            "contract": "OwnedUpgradeable",
+            "src": "contracts/v0.2/OwnedUpgradeable.sol:11"
+          },
+          {
+            "label": "candidateOwner",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_address",
+            "contract": "OwnedUpgradeable",
+            "src": "contracts/v0.2/OwnedUpgradeable.sol:12"
+          },
+          {
+            "label": "operators",
+            "offset": 0,
+            "slot": "2",
+            "type": "t_mapping(t_address,t_bool)",
+            "contract": "LordV2",
+            "src": "contracts/v0.2/LordV2.sol:18"
+          }
+        ],
+        "types": {
+          "t_address": {
+            "label": "address",
+            "numberOfBytes": "20"
+          },
+          "t_bool": {
+            "label": "bool",
+            "numberOfBytes": "1"
+          },
+          "t_mapping(t_address,t_bool)": {
+            "label": "mapping(address => bool)",
+            "numberOfBytes": "32"
+          }
+        }
+      }
+    },
+    "1fd1127747a627a4559b4a900c06aa0509e9cdc6b819c60b17b93e2797c3c351": {
+      "address": "0x1104E9f89E13B34046C11E8E6F42FfA682f807F4",
+      "txHash": "0x50368d77d82c39c710524ac828d4e457cb9e13bfd5ce98e0f424e9be78324426",
+      "layout": {
+        "storage": [
+          {
+            "label": "_initialized",
+            "offset": 0,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:39"
+          },
+          {
+            "label": "_initializing",
+            "offset": 1,
+            "slot": "0",
+            "type": "t_bool",
+            "contract": "Initializable",
+            "src": "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol:44"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "1",
+            "type": "t_array(t_uint256)50_storage",
+            "contract": "ContextUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/utils/ContextUpgradeable.sol:36"
+          },
+          {
+            "label": "_owner",
+            "offset": 0,
+            "slot": "51",
+            "type": "t_address",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:22"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "52",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "OwnableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol:87"
+          },
+          {
+            "label": "_paused",
+            "offset": 0,
+            "slot": "101",
+            "type": "t_bool",
+            "contract": "PausableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:29"
+          },
+          {
+            "label": "__gap",
+            "offset": 0,
+            "slot": "102",
+            "type": "t_array(t_uint256)49_storage",
+            "contract": "PausableUpgradeable",
+            "src": "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol:102"
+          },
+          {
+            "label": "emergencyOperator",
+            "offset": 0,
+            "slot": "151",
+            "type": "t_address",
+            "contract": "EmergencyOperator",
+            "src": "contracts/v0.2/EmergencyOperator.sol:6"
+          },
+          {
+            "label": "lord",
+            "offset": 0,
+            "slot": "152",
+            "type": "t_address",
+            "contract": "MinterDAO",
+            "src": "contracts/v0.2/MinterDAO.sol:14"
+          },
+          {
+            "label": "minters",
+            "offset": 0,
+            "slot": "153",
+            "type": "t_mapping(t_address,t_mapping(t_address,t_bool))",
+            "contract": "MinterDAO",
+            "src": "contracts/v0.2/MinterDAO.sol:15"
           }
         ],
         "types": {

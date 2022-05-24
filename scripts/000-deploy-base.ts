@@ -8,6 +8,8 @@ import { MinterDAO } from "../types/MinterDAO"
 async function main() {
   const [deployer] = await ethers.getSigners()
 
+  const { chainId } = await ethers.provider.getNetwork()
+
   const deployment = {}
 
   const LordV2Factory = await ethers.getContractFactory("LordV2")
@@ -30,12 +32,12 @@ async function main() {
   
   const ERC20Tube = await ethers.getContractFactory("ERC20Tube")
   const tube = await ERC20Tube.deploy(
-    process.env.TUBE_ID, // tubeID
+    chainId, // tubeID
     ledgerV2.address, // ledger
     lordV2.address, // lord
     verifier.address, // verifier
     process.env.SAFE, // safe
-    process.env.INIT_NONCE // initNonce
+    0 // initNonce
   )
   await tube.deployed()
   console.log("ERC20Tube deployed to:", tube.address)
