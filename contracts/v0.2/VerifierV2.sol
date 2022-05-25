@@ -15,10 +15,6 @@ contract VerifierV2 is Ownable, Pausable, EmergencyOperator {
     address[] public validators;
     mapping(address => uint8) private validatorIndexes;
 
-    constructor() {
-        _pause();
-    }
-
     function pause() external onlyEmergencyOperator {
         _pause();
     }

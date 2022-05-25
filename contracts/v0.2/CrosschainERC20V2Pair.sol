@@ -27,7 +27,8 @@ contract CrosschainERC20V2Pair {
         if (_tokenDecimals > _crosschainTokenDecimals) {
             st = ScaleType.DOWN;
             s = 10 ** (_tokenDecimals - _crosschainTokenDecimals);
-        } else {
+        } 
+        if (_crosschainTokenDecimals > _tokenDecimals) {
             st = ScaleType.UP;
             s = 10 ** (_crosschainTokenDecimals - _tokenDecimals);
         }
