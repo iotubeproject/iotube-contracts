@@ -124,49 +124,43 @@ contract AssetRegistryV2 is Ownable {
     }
 
     function activateAsset(uint256 _id) external onlyOperator isValidAssetID(_id) {
-        if (activeAssetIDs[_id] == false) {
-            activeAssetIDs[_id] = true;
-            emit AssetActivated(_id);
-        }
+        require(activeAssetIDs[_id] == false, "already activated");
+        activeAssetIDs[_id] = true;
+        emit AssetActivated(_id);
     }
 
     function deactivateAsset(uint256 _id) external onlyOperator isValidAssetID(_id) {
-        if (activeAssetIDs[_id]) {
-            activeAssetIDs[_id] = false;
-            emit AssetDeactivated(_id);
-        }
+        require(activeAssetIDs[_id], "already deactivated");
+        activeAssetIDs[_id] = false;
+        emit AssetDeactivated(_id);
     }
 
     function activateTube(uint256 _id) external onlyOperator isValidTubeID(_id) {
-        if (activeTubeIDs[_id] == false) {
-            activeTubeIDs[_id] = true;
-            emit TubeActivated(_id);
-        }
+        require(activeTubeIDs[_id] == false, "already activated");
+        activeTubeIDs[_id] = true;
+        emit TubeActivated(_id);
     }
 
     function deactivateTube(uint256 _id) external onlyOperator isValidTubeID(_id) {
-        if (activeTubeIDs[_id]) {
-            activeTubeIDs[_id] = true;
-        }
+        require(activeTubeIDs[_id], "already deactivated");
+        activeTubeIDs[_id] = true;
         emit TubeDeactivated(_id);
     }
 
     function activateAssetOnTube(uint256 _assetID, uint256 _tubeID) external onlyOperator isValidAssetID(_assetID) isValidTubeID(_tubeID) {
         Asset storage asset = assets[_assetID][_tubeID];
         require(asset.addr != address(0), "asset not registered");
-        if (asset.active == false) {
-            asset.active = true;
-            emit AssetOnTubeActivated(_assetID, _tubeID, asset.addr);
-        }
+        require(asset.active == false, "already activated");
+        asset.active = true;
+        emit AssetOnTubeActivated(_assetID, _tubeID, asset.addr);
     }
 
     function deactivateAssetOnTube(uint256 _assetID, uint256 _tubeID) external onlyOperator isValidAssetID(_assetID) isValidTubeID(_tubeID) {
         Asset storage asset = assets[_assetID][_tubeID];
         require(asset.addr != address(0), "asset not registered");
-        if (asset.active) {
-            asset.active = false;
-            emit AssetOnTubeDeactivated(_assetID, _tubeID, asset.addr);
-        }
+        require(asset.active, "already activated");
+        asset.active = false;
+        emit AssetOnTubeDeactivated(_assetID, _tubeID, asset.addr);
     }
 
     ///////////////////////////////////
@@ -174,16 +168,14 @@ contract AssetRegistryV2 is Ownable {
     ///////////////////////////////////
 
     function grant(address _account) public onlyOwner {
-        if (!operators[_account]) {
-            operators[_account] = true;
-            emit OperatorGranted(_account);
-        }
+        require(!operators[_account], "already an operator");
+        operators[_account] = true;
+        emit OperatorGranted(_account);
     }
 
     function revoke(address _account) public onlyOwner {
-        if (operators[_account]) {
-            operators[_account] = false;
-            emit OperatorRevoked(_account);
-        }
+        require(operators[_account], "not an operator");
+        operators[_account] = false;
+        emit OperatorRevoked(_account);
     }
 }

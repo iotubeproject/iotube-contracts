@@ -21,15 +21,18 @@ contract CrosschainERC20FactoryV2 is Ownable {
         address indexed token,
         address indexed pair
     );
+    event MinterDAOSet(address indexed dao);
 
     address public minterDAO;
 
     constructor(address _minterDAO) {
         minterDAO = _minterDAO;
+        emit MinterDAOSet(_minterDAO);
     }
 
     function setMinterDAO(address _minterDAO) external onlyOwner {
         minterDAO = _minterDAO;
+        emit MinterDAOSet(_minterDAO);
     }
 
     function createCrosschainERC20(

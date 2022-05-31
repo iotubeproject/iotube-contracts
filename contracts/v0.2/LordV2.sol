@@ -22,17 +22,15 @@ contract LordV2 is Initializable, OwnedUpgradeable {
     }
 
     function addOperator(address _operator) public onlyOwner {
-        if (operators[_operator] == false) {
-            operators[_operator] = true;
-            emit OperatorAdded(_operator);
-        }
+        require(operators[_operator] == false, "already an operator");
+        operators[_operator] = true;
+        emit OperatorAdded(_operator);
     }
 
     function removeOperator(address _operator) public onlyOwner {
-        if (operators[_operator] == true) {
-            operators[_operator] = false;
-            emit OperatorRemoved(_operator);
-        }
+        require(operators[_operator] == true, "not an operator");
+        operators[_operator] = false;
+        emit OperatorRemoved(_operator);
     }
 
     function isOperator(address _operator) public view returns (bool) {

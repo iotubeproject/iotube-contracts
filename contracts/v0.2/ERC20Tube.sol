@@ -32,6 +32,8 @@ interface IVerifier {
 contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
     using SafeERC20 for IERC20;
 
+    event LordUpdated(address indexed lord);
+    event SafeUpdated(address indexed safe);
     event TubeInfoUpdated(uint256 tubeID, uint256 feeRate, bool enabled);
     event Settled(bytes32 indexed key, address[] validators);
     event Receipt(
@@ -163,10 +165,12 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
 
     function setLord(ILord _lord) external onlyOwner {
         lord = _lord;
+        emit LordUpdated(address(_lord));
     }
 
     function setSafe(address _safe) external onlyOwner {
         safe = _safe;
+        emit SafeUpdated(_safe);
     }
 
     function pause() public onlyEmergencyOperator {
