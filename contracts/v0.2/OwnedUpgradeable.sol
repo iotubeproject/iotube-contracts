@@ -22,6 +22,7 @@ abstract contract OwnedUpgradeable is Initializable {
     }
 
     function transferOwnership(address _newOwner) public onlyOwner {
+        require(_newOwner != address(0), "invalid owner address");
         candidateOwner = _newOwner;
         emit CandidateOwnerNominated(_newOwner);
     }

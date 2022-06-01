@@ -143,7 +143,7 @@ contract AssetRegistryV2 is Ownable {
 
     function deactivateTube(uint256 _id) external onlyOperator isValidTubeID(_id) {
         require(activeTubeIDs[_id], "already deactivated");
-        activeTubeIDs[_id] = true;
+        activeTubeIDs[_id] = false;
         emit TubeDeactivated(_id);
     }
 

@@ -19,7 +19,7 @@ contract LedgerV2 is Ownable {
 
     function removeOperator(address operator) public onlyOwner {
         require(operators[operator], "not an operator");
-        operators[operator] = true;
+        operators[operator] = false;
         emit OperatorRemoved(operator);
     }
 

@@ -69,8 +69,10 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
         tubeID = _tubeID;
         ledger = _ledger;
         lord = _lord;
+        emit LordUpdated(address(_lord));
         verifier = _verifier;
         safe = _safe;
+        emit SafeUpdated(address(_safe));
         nonce = _initNonce;
     }
 
@@ -94,7 +96,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
             fee = _amount * dst.rate / 10000;
             if (fee > 0) {
                 _amount -= fee;
-                IERC20(_token).transferFrom(msg.sender, safe, fee);
+                IERC20(_token).safeTransferFrom(msg.sender, safe, fee);
             }
         }
         IBurnableERC20(_token).burnFrom(msg.sender, _amount);

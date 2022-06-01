@@ -2,6 +2,7 @@
 
 pragma solidity >=0.8.0;
 
+import "./EmergencyOperator.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IERC20Mintable {
@@ -10,7 +11,7 @@ interface IERC20Mintable {
     function burnFrom(address account, uint256 amount) external;
 }
 
-contract CrosschainERC20V2Pair {
+contract CrosschainERC20V2Pair is EmergencyOperator {
     using SafeERC20 for IERC20;
     enum ScaleType{ SAME, UP, DOWN }
 
@@ -18,8 +19,9 @@ contract CrosschainERC20V2Pair {
     IERC20 public token;
     uint256 public immutable scale;
     ScaleType public immutable scaleType;
+    uint256 public totalTokenAmount;
 
-    constructor(address _crosschainToken, uint8 _crosschainTokenDecimals, address _token, uint8 _tokenDecimals) {
+    constructor(address _crosschainToken, uint8 _crosschainTokenDecimals, address _token, uint8 _tokenDecimals, address _operator) {
         crosschainToken = IERC20Mintable(_crosschainToken);
         token = IERC20(_token);
         ScaleType st = ScaleType.SAME;
@@ -34,6 +36,14 @@ contract CrosschainERC20V2Pair {
         }
         scaleType = st;
         scale = s;
+        _setEmergencyOperator(_operator);
+    }
+
+    function _deposit(address _sender, uint256 _depositAmount, address _recipient, uint256 _mintAmount) internal {
+        require(_depositAmount != 0 && _mintAmount != 0, "invalid amount");
+        token.safeTransferFrom(_sender, address(this), _depositAmount);
+        totalTokenAmount += _depositAmount;
+        crosschainToken.mint(_recipient, _mintAmount);
     }
 
     function deposit(uint256 _amount) external {
@@ -43,15 +53,13 @@ contract CrosschainERC20V2Pair {
     function depositTo(address _to, uint256 _amount) public {
         uint256 mintAmount = _amount;
         if (scaleType == ScaleType.UP) {
-            mintAmount = mintAmount * scale;
+            mintAmount = _amount * scale;
         } else if (scaleType == ScaleType.DOWN) {
-            mintAmount = mintAmount / scale;
+            mintAmount = _amount / scale;
+            _amount = mintAmount * scale;
         }
-        require(_amount != 0 && mintAmount != 0, "invalid amount");
-        token.safeTransferFrom(msg.sender, address(this), _amount);
-        crosschainToken.mint(_to, mintAmount);
+        _deposit(msg.sender, _amount, _to, mintAmount);
     }
-
 
     function depositNoRounding(uint256 _amount) external {
         depositToNoRounding(msg.sender, _amount);
@@ -60,14 +68,19 @@ contract CrosschainERC20V2Pair {
     function depositToNoRounding(address _to, uint256 _amount) public {
         uint256 mintAmount = _amount;
         if (scaleType == ScaleType.UP) {
-            mintAmount = mintAmount * scale;
+            mintAmount = _amount * scale;
         } else if (scaleType == ScaleType.DOWN) {
-            require((mintAmount % scale) == 0, "no rounding");
-            mintAmount = mintAmount / scale;
+            require((_amount % scale) == 0, "no rounding");
+            mintAmount = _amount / scale;
         }
-        require(_amount != 0 && mintAmount != 0, "invalid amount");
-        token.safeTransferFrom(msg.sender, address(this), _amount);
-        crosschainToken.mint(_to, mintAmount);
+        _deposit(msg.sender, _amount, _to, mintAmount);
+    }
+
+    function _withdraw(address _sender, uint256 _burnAmount, address _recipient, uint256 _transferAmount) internal {
+        require(_burnAmount != 0 && _transferAmount != 0, "invalid amount");
+        crosschainToken.burnFrom(_sender, _burnAmount);
+        token.safeTransfer(_recipient, _transferAmount);
+        totalTokenAmount -= _transferAmount;
     }
 
     function withdraw(uint256 _amount) external {
@@ -77,15 +90,13 @@ contract CrosschainERC20V2Pair {
     function withdrawTo(address _to, uint256 _amount) public {
         uint256 transferAmount = _amount;
         if (scaleType == ScaleType.UP) {
-            transferAmount = transferAmount / scale;
+            transferAmount = _amount / scale;
+            _amount = transferAmount * scale;
         } else if (scaleType == ScaleType.DOWN) {
-            transferAmount = transferAmount * scale;
+            transferAmount = _amount * scale;
         }
-        require(_amount != 0 && transferAmount != 0, "invalid amount");
-        crosschainToken.burnFrom(msg.sender, _amount);
-        token.safeTransfer(_to, transferAmount);
+        _withdraw(msg.sender, _amount, _to, transferAmount);
     }
-
 
     function withdrawNoRounding(uint256 _amount) external {
         withdrawToNoRounding(msg.sender, _amount);
@@ -95,12 +106,15 @@ contract CrosschainERC20V2Pair {
         uint256 transferAmount = _amount;
         if (scaleType == ScaleType.UP) {
             require((transferAmount % scale) == 0, "no rounding");
-            transferAmount = transferAmount / scale;
+            transferAmount = _amount / scale;
         } else if (scaleType == ScaleType.DOWN) {
-            transferAmount = transferAmount * scale;
+            transferAmount = _amount * scale;
         }
-        require(_amount != 0 && transferAmount != 0, "invalid amount");
-        crosschainToken.burnFrom(msg.sender, _amount);
-        token.safeTransfer(_to, transferAmount);
+        _withdraw(msg.sender, _amount, _to, transferAmount);
+    }
+
+    function emergencyWithdraw(address _token, uint256 _amount) external onlyEmergencyOperator {
+        require(_token != address(token) || _amount == token.balanceOf(address(this)) - totalTokenAmount, "invalid amount");
+        IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 }

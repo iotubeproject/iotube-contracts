@@ -54,7 +54,8 @@ describe("crosschain erc20 pair tests", () => {
         cToken.address,
         (await cToken.decimals()),
         token.address,
-        (await token.decimals())
+        (await token.decimals()),
+        owner.address,
       ) as CrosschainERC20V2Pair
 
       await token.connect(holder1).approve(pair.address, 100000000000)
@@ -163,7 +164,8 @@ describe("crosschain erc20 pair tests", () => {
         cToken.address,
         (await cToken.decimals()),
         token.address,
-        (await token.decimals())
+        (await token.decimals()),
+        owner.address,
       ) as CrosschainERC20V2Pair
 
       await token.connect(holder1).approve(pair.address, 100000000000)
@@ -186,8 +188,6 @@ describe("crosschain erc20 pair tests", () => {
     })
 
     it("deposit", async () => {
-      await minter.connect(owner).addMinter(pair.address, cToken.address)
-
       expect(0).to.equals(await cToken.totalSupply())
       await pair.connect(holder1).deposit(100000000)
 
@@ -208,8 +208,8 @@ describe("crosschain erc20 pair tests", () => {
       expect(0).to.equals(await cToken.balanceOf(holder3.address))
       expect(4000000).to.equals(await cToken.balanceOf(holder1.address))
       expect(6000000).to.equals(await cToken.totalSupply())
-      expect(99699999901).to.equals(await token.balanceOf(holder3.address))
-      expect(600000099).to.equals(await token.balanceOf(pair.address))
+      expect(99700000000).to.equals(await token.balanceOf(holder3.address))
+      expect(600000000).to.equals(await token.balanceOf(pair.address))
 
       await pair.connect(holder1).withdraw(1000000)
       expect(3000000).to.equals(await cToken.balanceOf(holder1.address))
@@ -243,7 +243,8 @@ describe("crosschain erc20 pair tests", () => {
         cToken.address,
         (await cToken.decimals()),
         token.address,
-        (await token.decimals())
+        (await token.decimals()),
+        owner.address,
       ) as CrosschainERC20V2Pair
 
       await token.connect(holder1).approve(pair.address, 100000000000)
@@ -266,8 +267,6 @@ describe("crosschain erc20 pair tests", () => {
     })
 
     it("deposit", async () => {
-      await minter.connect(owner).addMinter(pair.address, cToken.address)
-
       expect(0).to.equals(await cToken.totalSupply())
       await pair.connect(holder1).deposit(100000000)
 
@@ -301,8 +300,8 @@ describe("crosschain erc20 pair tests", () => {
       expect(99900000000).to.equals(await token.balanceOf(holder2.address))
 
       await pair.connect(holder1).withdraw(10000000099)
-      expect(9999999901).to.equals(await cToken.balanceOf(holder1.address))
-      expect(29999999901).to.equals(await cToken.totalSupply())
+      expect(10000000000).to.equals(await cToken.balanceOf(holder1.address))
+      expect(30000000000).to.equals(await cToken.totalSupply())
 
       await expect(pair.connect(holder1).withdrawNoRounding(9999999901)).to.be.revertedWith("no rounding")
     })

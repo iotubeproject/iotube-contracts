@@ -51,7 +51,7 @@ describe("crosschain erc20 factory v2", () => {
     )
     const receipt = await createPairTx.wait()
 
-    const pair = pairFactory.attach(receipt.events![0].args!.pair) as CrosschainERC20V2Pair
+    const pair = pairFactory.attach(receipt.events![1].args!.pair) as CrosschainERC20V2Pair
     expect(await pair.token()).to.equal(token.address)
     expect(await pair.crosschainToken()).to.equal(cTokenAddress)
     expect(await pair.scale()).to.equals(1)
