@@ -113,7 +113,7 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
         _withdraw(msg.sender, _amount, _to, transferAmount);
     }
 
-    function emergencyWithdraw(address _token, uint256 _amount) external onlyEmergencyOperator {
+    function adhocWithdraw(address _token, uint256 _amount) external onlyEmergencyOperator {
         require(_token != address(token) || _amount == token.balanceOf(address(this)) - totalTokenAmount, "invalid amount");
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
