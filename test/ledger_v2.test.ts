@@ -40,5 +40,10 @@ describe("ledger v2 tests", () => {
     await expect(
       ledger.connect(operator).record(TEST_ID)
     ).to.be.revertedWith("duplicate record")
+
+    await ledger.connect(owner).removeOperator(operator.address)
+    await expect(
+      ledger.connect(operator).record("0x0000000000000000000000000000000000000000000000000000000000000002")
+    ).to.be.revertedWith("invalid operator")
   })
 })

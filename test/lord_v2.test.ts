@@ -49,5 +49,10 @@ describe("lord v2 tests", () => {
     expect(0).to.equals(await token.balanceOf(ACCOUNT))
     await lord.connect(operator).mint(token.address, ACCOUNT, 1)
     expect(1).to.equals(await token.balanceOf(ACCOUNT))
+
+    await lord.connect(owner).removeOperator(operator.address)
+    await expect(
+      lord.connect(operator).mint(token.address, ACCOUNT, 1)
+    ).to.be.revertedWith("invalid operator")
   })
 })
