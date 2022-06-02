@@ -12,7 +12,7 @@ contract LedgerV2 is Ownable {
     mapping(bytes32 => uint256) public records;
 
     function addOperator(address operator) public onlyOwner {
-        require(operators[operator] == false, "already an operator");
+        require(!operators[operator], "already an operator");
         operators[operator] = true;
         emit OperatorAdded(operator);
     }

@@ -12,7 +12,7 @@ abstract contract OwnedUpgradeable is Initializable {
     address public candidateOwner;
 
     modifier onlyOwner {
-        require(msg.sender == owner);
+        require(msg.sender == owner, "caller is not the owner");
         _;
     }
 

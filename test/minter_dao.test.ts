@@ -33,6 +33,9 @@ describe("minter dao tests", () => {
     expect(await minterDAO.isMinter(pair.address, "0x0000000000000000000000000000000000000001")).to.be.false
 
     await minterDAO.connect(owner).addMinter(pair.address, "0x0000000000000000000000000000000000000001")
+    await expect(
+      minterDAO.connect(owner).addMinter(pair.address, "0x0000000000000000000000000000000000000001")
+    ).to.be.revertedWith("already a minter")
 
     expect(await minterDAO.isMinter(pair.address, "0x0000000000000000000000000000000000000001")).to.be.true
 

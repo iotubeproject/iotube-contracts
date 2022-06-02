@@ -25,7 +25,7 @@ contract MinterDAO is OwnableUpgradeable, PausableUpgradeable, EmergencyOperator
     function addMinter(address _minter, address _token) external onlyOwner {
         require(_minter != address(0), "invalid minter address");
         require(_token != address(0), "invalid token address");
-        require(minters[_minter][_token] == false, "already a minter");
+        require(!minters[_minter][_token], "already a minter");
         minters[_minter][_token] = true;
         emit MinterAdded(_minter, _token);
     }
