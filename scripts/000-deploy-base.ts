@@ -42,8 +42,10 @@ async function main() {
   deployment["tube"] = tube.address
 
   // add operator
-  await ledgerV2.addOperator(tube.address)
-  await lordV2.addOperator(tube.address)
+  let tx = await ledgerV2.addOperator(tube.address)
+  await tx.wait()
+  tx = await lordV2.addOperator(tube.address)
+  await tx.wait()
 
   const MinterDAOFactory = await ethers.getContractFactory("MinterDAO")
   const minterDAO = await upgrades.deployProxy(MinterDAOFactory, [
