@@ -6,7 +6,8 @@ async function main() {
   const deployments = JSON.parse(fs.readFileSync(`./deployments/${network.name}.json`).toString())
 
   const ERC20TubeRouter = await ethers.getContractFactory("ERC20TubeRouter")
-  const router = await ERC20TubeRouter.deploy(deployments.tube)
+  // use deployer's address as default safe address
+  const router = await ERC20TubeRouter.deploy(deployments.tube, deployer.address)
   await router.deployed();
   console.log("ERC20TubeRouter deployed to:", router.address)
   deployments["erc20TubeRouter"] = router.address
