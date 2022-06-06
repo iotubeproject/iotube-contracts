@@ -22,7 +22,7 @@ interface ITube {
 }
 
 interface ICrosschainERC20V2Pair {
-    function deposit(uint256 _amount) external;
+    function deposit(uint256 _amount) external returns (uint256);
     function token() external view returns (IERC20);
     function crosschainToken() external view returns (IERC20);
 }
@@ -70,11 +70,11 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
         require(address(token) != address(0), "invalid token");
         token.safeTransferFrom(msg.sender, address(this), _amount);
         token.safeApprove(_crosschainERC20Pair, _amount);
-        pair.deposit(_amount);
+        uint256 aAmount = pair.deposit(_amount);
 
         IERC20 crosschainToken = pair.crosschainToken();
-        crosschainToken.safeApprove(address(tube), _amount);
-        tube.depositTo(address(crosschainToken), _amount, _tubeID, _recipient);
+        crosschainToken.safeApprove(address(tube), aAmount);
+        tube.depositTo(address(crosschainToken), aAmount, _tubeID, _recipient);
         emit RelayFeeReceipt(msg.sender, address(crosschainToken), _tubeID, setting.fee);
     }
 

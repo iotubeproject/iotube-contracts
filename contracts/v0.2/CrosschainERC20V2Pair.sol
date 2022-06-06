@@ -46,11 +46,11 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
         crosschainToken.mint(_recipient, _mintAmount);
     }
 
-    function deposit(uint256 _amount) external {
-        depositTo(msg.sender, _amount);
+    function deposit(uint256 _amount) external returns (uint256 out) {
+        return depositTo(msg.sender, _amount);
     }
 
-    function depositTo(address _to, uint256 _amount) public {
+    function depositTo(address _to, uint256 _amount) public returns (uint256 out)  {
         uint256 mintAmount = _amount;
         if (scaleType == ScaleType.UP) {
             mintAmount = _amount * scale;
@@ -59,13 +59,14 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
             _amount = mintAmount * scale;
         }
         _deposit(msg.sender, _amount, _to, mintAmount);
+        out = mintAmount;
     }
 
-    function depositNoRounding(uint256 _amount) external {
-        depositToNoRounding(msg.sender, _amount);
+    function depositNoRounding(uint256 _amount) external returns (uint256 out) {
+        return depositToNoRounding(msg.sender, _amount);
     }
 
-    function depositToNoRounding(address _to, uint256 _amount) public {
+    function depositToNoRounding(address _to, uint256 _amount) public returns (uint256 out) {
         uint256 mintAmount = _amount;
         if (scaleType == ScaleType.UP) {
             mintAmount = _amount * scale;
@@ -74,6 +75,7 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
             mintAmount = _amount / scale;
         }
         _deposit(msg.sender, _amount, _to, mintAmount);
+        out = mintAmount;
     }
 
     function _withdraw(address _sender, uint256 _burnAmount, address _recipient, uint256 _transferAmount) internal {
@@ -83,11 +85,11 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
         totalTokenAmount -= _transferAmount;
     }
 
-    function withdraw(uint256 _amount) external {
-        withdrawTo(msg.sender, _amount);
+    function withdraw(uint256 _amount) external returns (uint256 out)  {
+        return withdrawTo(msg.sender, _amount);
     }
 
-    function withdrawTo(address _to, uint256 _amount) public {
+    function withdrawTo(address _to, uint256 _amount) public returns (uint256 out) {
         uint256 transferAmount = _amount;
         if (scaleType == ScaleType.UP) {
             transferAmount = _amount / scale;
@@ -96,13 +98,14 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
             transferAmount = _amount * scale;
         }
         _withdraw(msg.sender, _amount, _to, transferAmount);
+        out = transferAmount;
     }
 
-    function withdrawNoRounding(uint256 _amount) external {
-        withdrawToNoRounding(msg.sender, _amount);
+    function withdrawNoRounding(uint256 _amount) external returns (uint256 out) {
+        return withdrawToNoRounding(msg.sender, _amount);
     }
 
-    function withdrawToNoRounding(address _to, uint256 _amount) public {
+    function withdrawToNoRounding(address _to, uint256 _amount) public returns (uint256 out) {
         uint256 transferAmount = _amount;
         if (scaleType == ScaleType.UP) {
             require((transferAmount % scale) == 0, "no rounding");
@@ -111,6 +114,7 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
             transferAmount = _amount * scale;
         }
         _withdraw(msg.sender, _amount, _to, transferAmount);
+        out = transferAmount;
     }
 
     function adhocWithdraw(address _token, uint256 _amount) external onlyEmergencyOperator {
