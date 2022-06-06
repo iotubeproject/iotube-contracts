@@ -1,6 +1,7 @@
 import * as fs from "fs";
-import { ethers, network, upgrades } from "hardhat"
+import { ethers, network } from "hardhat"
 import { CrosschainERC20FactoryV2 } from "../../types/CrosschainERC20FactoryV2";
+import { MinterDAO } from "../../types/MinterDAO";
 
 async function main() {
   const deployments = JSON.parse(fs.readFileSync(`./deployments/${network.name}.json`).toString())
@@ -30,6 +31,14 @@ async function main() {
     }
     deployments.pairs[tokenName].push(log.args.pair)
     console.log(`create crosschain token pair deployed at ${log.args.pair}`)
+
+    const skipAddMinter = process.env.SKIP_ADD_MINTER || false
+    if (!skipAddMinter) {
+      console.log('add pair as token minter to MinterDAO')
+      const minterdao = await ethers.getContractAt("MinterDAO", deployments.minterDAO) as MinterDAO
+      const tx = await minterdao.addMinter(log.args.pair, deployments.crosschainToken[tokenName])
+      await tx.wait()
+    }
   } else {
     console.log("create crosschain token pair fail")
   }
