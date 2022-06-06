@@ -6,11 +6,12 @@ import "./EmergencyOperator.sol";
 import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/security/PausableUpgradeable.sol";
 
-contract MinterDAO is OwnableUpgradeable, PausableUpgradeable, EmergencyOperator {
+contract MinterDAO is OwnableUpgradeable, PausableUpgradeable {
     event NewLord(address indexed lord);
     event MinterAdded(address indexed minter, address indexed token);
     event MinterRemoved(address indexed minter, address indexed token);
 
+    EmergencyOperator public emergencyOperator;
     address public lord;
     mapping(address => mapping(address => bool)) private minters;
 
@@ -18,7 +19,7 @@ contract MinterDAO is OwnableUpgradeable, PausableUpgradeable, EmergencyOperator
         __Ownable_init();
         __Pausable_init();
         lord = _lord;
-        _setEmergencyOperator(_emergencyOperator);
+        emergencyOperator = EmergencyOperator(_emergencyOperator);
         emit NewLord(_lord);
     }
 
@@ -36,19 +37,17 @@ contract MinterDAO is OwnableUpgradeable, PausableUpgradeable, EmergencyOperator
         emit MinterRemoved(_minter, _token);
     }
 
-    function setEmergencyOperator(address _emergencyOperator) external onlyOwner {
-        _setEmergencyOperator(_emergencyOperator);
-    }
-
     function isMinter(address _account, address _token) external view whenNotPaused returns (bool) {
         return _account == lord || minters[_account][_token];
     }
 
-    function pause() external onlyEmergencyOperator {
+    function pause() external {
+        require(emergencyOperator.isEmergencyOperator(msg.sender), "no permission");
         _pause();
     }
 
-    function unpause() external onlyEmergencyOperator {
+    function unpause() external {
+        require(emergencyOperator.isEmergencyOperator(msg.sender), "no permission");
         _unpause();
     }
 }

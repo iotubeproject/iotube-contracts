@@ -29,7 +29,7 @@ interface IVerifier {
         returns (bool isValid_, address[] memory validators_);
 }
 
-contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
+contract ERC20Tube is Ownable, Pausable, ReentrancyGuard {
     using SafeERC20 for IERC20;
 
     event LordUpdated(address indexed lord);
@@ -50,6 +50,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
         bool enabled;
     }
 
+    EmergencyOperator public emergencyOperator;
     uint256 public tubeID;
     ILedger public ledger;
     ILord public lord;
@@ -64,7 +65,8 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
         ILord _lord,
         IVerifier _verifier,
         address _safe,
-        uint256 _initNonce
+        uint256 _initNonce,
+        address _emergencyOperator
     ) ReentrancyGuard() {
         tubeID = _tubeID;
         ledger = _ledger;
@@ -74,6 +76,7 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
         safe = _safe;
         emit SafeUpdated(address(_safe));
         nonce = _initNonce;
+        emergencyOperator = EmergencyOperator(_emergencyOperator);
     }
 
     function destinationTubeInfo(uint256 _tubeID) public view returns (TubeInfo memory) {
@@ -161,10 +164,6 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
         }
     }
 
-    function setEmergencyOperator(address _operator) external onlyOwner {
-        _setEmergencyOperator(_operator);
-    }
-
     function setLord(ILord _lord) external onlyOwner {
         lord = _lord;
         emit LordUpdated(address(_lord));
@@ -175,11 +174,13 @@ contract ERC20Tube is Ownable, Pausable, ReentrancyGuard, EmergencyOperator {
         emit SafeUpdated(_safe);
     }
 
-    function pause() public onlyEmergencyOperator {
+    function pause() public {
+        require(emergencyOperator.isEmergencyOperator(msg.sender), "no permission");
         _pause();
     }
 
-    function unpause() public onlyEmergencyOperator {
+    function unpause() public {
+        require(emergencyOperator.isEmergencyOperator(msg.sender), "no permission");
         _unpause();
     }
 }

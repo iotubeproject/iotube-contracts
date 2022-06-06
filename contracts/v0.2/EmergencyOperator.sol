@@ -2,22 +2,32 @@
 
 pragma solidity >=0.8.0;
 
-abstract contract EmergencyOperator {
-    address private emergencyOperator;
+import "./OwnedUpgradeable.sol";
 
-    event EmergencyOperatorSet(address indexed operator);
+contract EmergencyOperator is OwnedUpgradeable {
+    mapping(address => bool) private operators;
+
+    event EmergencyOperatorAdded(address indexed operator);
+    event EmergencyOperatorRemoved(address indexed operator);
 
     modifier onlyEmergencyOperator() {
-        require(emergencyOperator == msg.sender, "caller is not emergency operator");
+        require(isEmergencyOperator(msg.sender), "caller is not emergency operator");
         _;
     }
 
-    /**
-     * @dev Transfers ownership of the contract to a new account (`newOwner`).
-     * Internal function without access restriction.
-     */
-    function _setEmergencyOperator(address _newOperator) internal virtual {
-        emergencyOperator = _newOperator;
-        emit EmergencyOperatorSet(_newOperator);
+    function addEmergencyOperator(address _newOperator) external {
+        require(!operators[_newOperator], "already an operator");
+        operators[_newOperator] = true;
+        emit EmergencyOperatorAdded(_newOperator);
+    }
+
+    function removeEmergencyOperator(address _newOperator) external {
+        require(operators[_newOperator], "not an operator");
+        operators[_newOperator] = false;
+        emit EmergencyOperatorRemoved(_newOperator);
+    }
+
+    function isEmergencyOperator(address _operator) public view returns (bool) {
+        return operators[_operator];
     }
 }
