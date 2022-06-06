@@ -22,7 +22,8 @@ interface ITube {
 }
 
 interface ICrosschainERC20V2Pair {
-    function deposit(uint256 _amount) external;
+    function calculateDepositValues(uint256 _amount) external view returns (uint256, uint256);
+    function deposit(uint256 _amount) external returns (uint256, uint256);
     function token() external view returns (IERC20);
     function crosschainToken() external view returns (IERC20);
 }
@@ -68,13 +69,15 @@ contract ERC20TubeRouter is Ownable, ReentrancyGuard {
         ICrosschainERC20V2Pair pair = ICrosschainERC20V2Pair(_crosschainERC20Pair);
         IERC20 token = pair.token();
         require(address(token) != address(0), "invalid token");
-        token.safeTransferFrom(msg.sender, address(this), _amount);
-        token.safeApprove(_crosschainERC20Pair, _amount);
-        pair.deposit(_amount);
+        (uint256 chargeAmount, uint256 mintAmount) = pair.calculateDepositValues(_amount);
+        token.safeTransferFrom(msg.sender, address(this), chargeAmount);
+        token.safeApprove(_crosschainERC20Pair, chargeAmount);
+        (uint256 inAmount, uint256 outAmount) = pair.deposit(chargeAmount);
+        require(inAmount == chargeAmount && outAmount == mintAmount, "invalid status");
 
         IERC20 crosschainToken = pair.crosschainToken();
-        crosschainToken.safeApprove(address(tube), _amount);
-        tube.depositTo(address(crosschainToken), _amount, _tubeID, _recipient);
+        crosschainToken.safeApprove(address(tube), mintAmount);
+        tube.depositTo(address(crosschainToken), mintAmount, _tubeID, _recipient);
         emit RelayFeeReceipt(msg.sender, address(crosschainToken), _tubeID, setting.fee);
     }
 
