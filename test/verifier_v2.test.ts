@@ -16,6 +16,7 @@ describe("verifier v2 tests", () => {
 
     const emergencyOperatorFactory = await ethers.getContractFactory("EmergencyOperator")
     emergencyOperator = await emergencyOperatorFactory.deploy() as EmergencyOperator
+    await emergencyOperator.initialize()
 
     const verifierFactory = await ethers.getContractFactory("VerifierV2")
     verifier = await verifierFactory.deploy(emergencyOperator.address) as VerifierV2

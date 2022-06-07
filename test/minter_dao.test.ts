@@ -18,6 +18,7 @@ describe("minter dao tests", () => {
     [owner, lord, emergencyOperator, pair, attacker] = await ethers.getSigners()
     const emergencyOperatorFactory = await ethers.getContractFactory("EmergencyOperator")
     emergencyOperatorContract = await emergencyOperatorFactory.deploy() as EmergencyOperator
+    await emergencyOperatorContract.initialize()
     await emergencyOperatorContract.addEmergencyOperator(emergencyOperator.address)
 
     const minterDAOFactory = await ethers.getContractFactory("MinterDAO")

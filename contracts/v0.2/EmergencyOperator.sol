@@ -10,18 +10,22 @@ contract EmergencyOperator is OwnedUpgradeable {
     event EmergencyOperatorAdded(address indexed operator);
     event EmergencyOperatorRemoved(address indexed operator);
 
+    function initialize() public initializer {
+        __Owned_init();
+    }
+
     modifier onlyEmergencyOperator() {
         require(isEmergencyOperator(msg.sender), "caller is not emergency operator");
         _;
     }
 
-    function addEmergencyOperator(address _newOperator) external {
+    function addEmergencyOperator(address _newOperator) external onlyOwner {
         require(!operators[_newOperator], "already an operator");
         operators[_newOperator] = true;
         emit EmergencyOperatorAdded(_newOperator);
     }
 
-    function removeEmergencyOperator(address _newOperator) external {
+    function removeEmergencyOperator(address _newOperator) external onlyOwner {
         require(operators[_newOperator], "not an operator");
         operators[_newOperator] = false;
         emit EmergencyOperatorRemoved(_newOperator);
