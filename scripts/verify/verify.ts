@@ -15,6 +15,14 @@ async function verify(params: any) {
 async function main() {
   const deployments = JSON.parse(fs.readFileSync(`./deployments/${network.name}.json`).toString())
 
+  const emergencyOperatorImplement = `0x${(await ethers.provider.getStorageAt(
+    deployments.emergencyOperator,
+    "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
+  )).substring(26)}`
+  await verify({
+    contract: "contracts/v0.2/EmergencyOperator.sol:EmergencyOperator",
+    address: emergencyOperatorImplement,
+  })
   const lordImplement = `0x${(await ethers.provider.getStorageAt(
     deployments.lord,
     "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc"
@@ -30,6 +38,9 @@ async function main() {
   await verify({
     contract: "contracts/v0.2/VerifierV2.sol:VerifierV2",
     address: deployments.verifier,
+    constructorArguments: [
+      deployments.emergencyOperator
+    ],
   })
   await verify({
     contract: "contracts/v0.2/ERC20Tube.sol:ERC20Tube",
@@ -40,7 +51,8 @@ async function main() {
       deployments.lord,
       deployments.verifier,
       process.env.SAFE,
-      0
+      0,
+      deployments.emergencyOperator
     ],
   })
   const minterDAOImplement = `0x${(await ethers.provider.getStorageAt(
@@ -73,7 +85,7 @@ async function main() {
 
   // await verify({
   //   contract: "contracts/v0.2/CrosschainERC20V2.sol:CrosschainERC20V2",
-  //   address: "0xfc0AD92b61Af7C98b14D1986db71921d7b474677",
+  //   address: "0xfEC51632aF0CF8075e6F391b5F7dC33E28B375C4",
   //   constructorArguments: [
   //     deployments.minterDAO,
   //     "Crosschain USDT",
@@ -83,9 +95,9 @@ async function main() {
   // })
   // await verify({
   //   contract: "contracts/v0.2/CrosschainERC20V2Pair.sol:CrosschainERC20V2Pair",
-  //   address: "0xf7e10F9da599729B828c3df1d22848C1173164d2",
+  //   address: "0xA151F8fe931fd6ae8541d7e614485A18e292f666",
   //   constructorArguments: [
-  //     "0xfc0AD92b61Af7C98b14D1986db71921d7b474677",
+  //     "0xfEC51632aF0CF8075e6F391b5F7dC33E28B375C4",
   //     6,
   //     "0x55d398326f99059fF775485246999027B3197955",
   //     18,
