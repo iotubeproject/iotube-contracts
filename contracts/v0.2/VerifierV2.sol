@@ -6,20 +6,27 @@ import "./EmergencyOperator.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/security/Pausable.sol";
 
-contract VerifierV2 is Ownable, Pausable, EmergencyOperator {
+contract VerifierV2 is Ownable, Pausable {
     event ValidatorAdded(address indexed validator);
     event ValidatorRemoved(address indexed validator);
 
     uint8 public constant VALIDATOR_LIMIT = 50;
 
+    EmergencyOperator public emergencyOperator;
     address[] public validators;
     mapping(address => uint8) private validatorIndexes;
 
-    function pause() external onlyEmergencyOperator {
+    constructor(address _emergencyOperator) {
+        emergencyOperator = EmergencyOperator(_emergencyOperator);
+    }
+
+    function pause() external {
+        require(emergencyOperator.isEmergencyOperator(msg.sender), "no permission");
         _pause();
     }
 
-    function unpause() external onlyEmergencyOperator  {
+    function unpause() external {
+        require(emergencyOperator.isEmergencyOperator(msg.sender), "no permission");
         _unpause();
     }
 
@@ -36,10 +43,6 @@ contract VerifierV2 is Ownable, Pausable, EmergencyOperator {
             }
             validators_[i] = validators[offset + i];
         }
-    }
-
-    function setEmergencyOperator(address _operator) public onlyOwner {
-        _setEmergencyOperator(_operator);
     }
 
     function addAll(address[] memory _validators) public onlyOwner {

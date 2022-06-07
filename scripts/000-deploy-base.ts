@@ -1,6 +1,7 @@
 import * as fs from "fs";
 import { ethers, network, upgrades } from "hardhat"
 
+import { EmergencyOperator } from "../types/EmergencyOperator"
 import { LedgerV2 } from "../types/LedgerV2"
 import { LordV2 } from "../types/LordV2"
 import { MinterDAO } from "../types/MinterDAO"
@@ -9,6 +10,11 @@ async function main() {
   const [deployer] = await ethers.getSigners()
 
   const deployment = {}
+  const EmergencyOperatorFactory = await ethers.getContractFactory("EmergencyOperator")
+  const emergencyOperator = await upgrades.deployProxy(EmergencyOperatorFactory) as EmergencyOperator
+  await emergencyOperator.deployed()
+  console.log("Emergency Operator deployed to:", emergencyOperator.address)
+  deployment["emergencyOperator"] = emergencyOperator.address
 
   const LordV2Factory = await ethers.getContractFactory("LordV2")
   const lordV2 = await upgrades.deployProxy(LordV2Factory, []) as LordV2;
@@ -23,7 +29,7 @@ async function main() {
   deployment["ledger"] = ledgerV2.address
 
   const Verifier = await ethers.getContractFactory("VerifierV2")
-  const verifier = await Verifier.deploy()
+  const verifier = await Verifier.deploy(emergencyOperator.address)
   await verifier.deployed();
   console.log("Verifier deployed to:", verifier.address)
   deployment["verifier"] = verifier.address
@@ -35,7 +41,8 @@ async function main() {
     lordV2.address, // lord
     verifier.address, // verifier
     process.env.SAFE, // safe
-    0 // initNonce
+    0, // initNonce
+    emergencyOperator.address, // emergency operator address
   )
   await tube.deployed()
   console.log("ERC20Tube deployed to:", tube.address)
@@ -50,7 +57,7 @@ async function main() {
   const MinterDAOFactory = await ethers.getContractFactory("MinterDAO")
   const minterDAO = await upgrades.deployProxy(MinterDAOFactory, [
     lordV2.address,
-    deployer.address
+    emergencyOperator.address
   ]) as MinterDAO;
   await minterDAO.deployed()
   console.log("MinterDAO deployed to:", lordV2.address)

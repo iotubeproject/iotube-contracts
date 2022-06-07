@@ -2,7 +2,6 @@
 
 pragma solidity >=0.8.0;
 
-import "./EmergencyOperator.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IERC20Mintable {
@@ -11,7 +10,7 @@ interface IERC20Mintable {
     function burnFrom(address account, uint256 amount) external;
 }
 
-contract CrosschainERC20V2Pair is EmergencyOperator {
+contract CrosschainERC20V2Pair {
     using SafeERC20 for IERC20;
     enum ScaleType{ SAME, UP, DOWN }
 
@@ -20,6 +19,7 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
     uint256 public immutable scale;
     ScaleType public immutable scaleType;
     uint256 public totalTokenAmount;
+    address public adhocOperator;
 
     constructor(address _crosschainToken, uint8 _crosschainTokenDecimals, address _token, uint8 _tokenDecimals, address _operator) {
         crosschainToken = IERC20Mintable(_crosschainToken);
@@ -36,7 +36,7 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
         }
         scaleType = st;
         scale = s;
-        _setEmergencyOperator(_operator);
+        adhocOperator = _operator;
     }
 
     function calculateDepositValues(uint256 _amount) public view returns (uint256, uint256) {
@@ -113,7 +113,8 @@ contract CrosschainERC20V2Pair is EmergencyOperator {
         _withdraw(msg.sender, inAmount_, _to, outAmount_);
     }
 
-    function adhocWithdraw(address _token, uint256 _amount) external onlyEmergencyOperator {
+    function adhocWithdraw(address _token, uint256 _amount) external {
+        require(msg.sender == adhocOperator, "no permission");
         require(_token != address(token) || _amount == token.balanceOf(address(this)) - totalTokenAmount, "invalid amount");
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
