@@ -12,7 +12,8 @@
     },
     "pairs": {
         "cUSDT": [
-            "0x45B90EA2B8A9A964D8567ADAad15aDF874fD26c1"
+            "0x45B90EA2B8A9A964D8567ADAad15aDF874fD26c1",
+            "0x209a1945b9a995842bE2a099e2CFb6E6b3C4d3F4"
         ]
     }
 }
