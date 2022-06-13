@@ -113,6 +113,21 @@ export default {
   },
   etherscan: {
     apiKey: `${process.env.ETHERSCAN_API_KEY}`,
+    customChains: [{
+      network: "iotex",
+      chainId: 4689,
+      urls: {
+        apiURL: "https://iotexscout.io/api",
+        browserURL: "https://iotexscout.io"
+      }
+    }, {
+      network: "iotex_test",
+      chainId: 4690,
+      urls: {
+        apiURL: "https://testnet.iotexscout.io/api",
+        browserURL: "https://testnet.iotexscout.io"
+      }
+    }]
   },
   gasReporter: {
     enabled: REPORT_GAS,
