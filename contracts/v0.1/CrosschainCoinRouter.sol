@@ -35,7 +35,7 @@ contract CrosschainCoinRouter {
     }
 
     function swapCoinForCrosschainCoin(uint256 _amount) public payable {
-        require(msg.value == _amount, "insufficient msg.value");
+        require(msg.value == _amount, "incorrect amount value");
         wrappedCoin.deposit{value: _amount}();
         cerc20.depositTo(msg.sender, _amount);
     }
@@ -58,7 +58,7 @@ contract CrosschainCoinRouter {
     }
 
     function swapCoinForWrappedCoin(uint256 _amount) public payable {
-        require(msg.value == _amount, "insufficient msg.value");
+        require(msg.value == _amount, "incorrect amount value");
         wrappedCoin.deposit{value: _amount}();
         ERC20(address(wrappedCoin)).safeTransfer(msg.sender, _amount);
     }
