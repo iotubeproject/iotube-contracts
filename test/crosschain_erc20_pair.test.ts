@@ -67,6 +67,8 @@ describe("crosschain erc20 pair tests", () => {
       await cToken.connect(holder2).approve(pair.address, 100000000000)
       await cToken.connect(holder3).approve(pair.address, 100000000000)
       await cToken.connect(attacker).approve(pair.address, 100000000000)
+      await pair.connect(owner).increaseCredit(200000000000)
+      expect(await pair.remainingCredit()).to.equals(200000000000)
     })
 
     it("no minter", async () => {
@@ -179,6 +181,25 @@ describe("crosschain erc20 pair tests", () => {
       await cToken.connect(attacker).approve(pair.address, 100000000000)
 
       await minter.connect(owner).addMinter(pair.address, cToken.address)
+      await pair.connect(owner).increaseCredit(200000000000)
+      expect(await pair.remainingCredit()).to.equals(200000000000)
+    })
+
+    describe("credit", () => {
+      it("no permission", async() => {
+        await expect(pair.connect(attacker).increaseCredit(100)).to.be.revertedWith("Ownable: caller is not the owner")
+        expect(await pair.remainingCredit()).to.equals(200000000000)
+        await expect(pair.connect(attacker).reduceCredit(100)).to.be.revertedWith("Ownable: caller is not the owner")
+        expect(await pair.remainingCredit()).to.equals(200000000000)
+      })
+      it("failed to reduce credit", async() => {
+        await expect(pair.connect(owner).reduceCredit(200000000001)).to.be.reverted
+        expect(await pair.remainingCredit()).to.equals(200000000000)
+      })
+      it("reduce credit", async () => {
+        await pair.connect(owner).reduceCredit(100000000000)
+        expect(await pair.remainingCredit()).to.equals(100000000000)
+      })
     })
 
     it("check basic", async () => {
@@ -258,6 +279,8 @@ describe("crosschain erc20 pair tests", () => {
       await cToken.connect(attacker).approve(pair.address, 10000000000000)
 
       await minter.connect(owner).addMinter(pair.address, cToken.address)
+      await pair.connect(owner).increaseCredit(200000000000)
+      expect(await pair.remainingCredit()).to.equals(200000000000)
     })
 
     it("check basic", async () => {

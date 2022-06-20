@@ -2,6 +2,7 @@
 
 pragma solidity >=0.8.0;
 
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface IERC20Mintable {
@@ -10,18 +11,20 @@ interface IERC20Mintable {
     function burnFrom(address account, uint256 amount) external;
 }
 
-contract CrosschainERC20V2Pair {
+contract CrosschainERC20V2Pair is Ownable {
     using SafeERC20 for IERC20;
     enum ScaleType{ SAME, UP, DOWN }
+    event CreditIncreased(uint256 amount);
+    event CreditReduced(uint256 amount);
 
     IERC20Mintable public crosschainToken;
     IERC20 public token;
     uint256 public immutable scale;
     ScaleType public immutable scaleType;
     uint256 public totalTokenAmount;
-    address public adhocOperator;
+    uint256 public remainingCredit;
 
-    constructor(address _crosschainToken, uint8 _crosschainTokenDecimals, address _token, uint8 _tokenDecimals, address _operator) {
+    constructor(address _crosschainToken, uint8 _crosschainTokenDecimals, address _token, uint8 _tokenDecimals, address _owner) {
         crosschainToken = IERC20Mintable(_crosschainToken);
         token = IERC20(_token);
         ScaleType st = ScaleType.SAME;
@@ -36,7 +39,7 @@ contract CrosschainERC20V2Pair {
         }
         scaleType = st;
         scale = s;
-        adhocOperator = _operator;
+        _transferOwnership(_owner);
     }
 
     function calculateDepositValues(uint256 _amount) public view returns (uint256, uint256) {
@@ -65,6 +68,7 @@ contract CrosschainERC20V2Pair {
         require(_depositAmount != 0 && _mintAmount != 0, "invalid amount");
         token.safeTransferFrom(_sender, address(this), _depositAmount);
         totalTokenAmount += _depositAmount;
+        remainingCredit -= _mintAmount;
         crosschainToken.mint(_recipient, _mintAmount);
     }
 
@@ -92,6 +96,7 @@ contract CrosschainERC20V2Pair {
         crosschainToken.burnFrom(_sender, _burnAmount);
         token.safeTransfer(_recipient, _transferAmount);
         totalTokenAmount -= _transferAmount;
+        remainingCredit += _burnAmount;
     }
 
     function withdraw(uint256 _amount) external returns (uint256 inAmount_, uint256 outAmount_)  {
@@ -113,9 +118,18 @@ contract CrosschainERC20V2Pair {
         _withdraw(msg.sender, inAmount_, _to, outAmount_);
     }
 
-    function adhocWithdraw(address _token, uint256 _amount) external {
-        require(msg.sender == adhocOperator, "no permission");
-        require(_token != address(token) || _amount == token.balanceOf(address(this)) - totalTokenAmount, "invalid amount");
+    function increaseCredit(uint256 _amount) external onlyOwner {
+        remainingCredit += _amount;
+        emit CreditIncreased(_amount);
+    }
+
+    function reduceCredit(uint256 _amount) external onlyOwner {
+        remainingCredit -= _amount;
+        emit CreditReduced(_amount);
+    }
+
+    function adhocWithdraw(address _token, uint256 _amount) external onlyOwner {
+        require(_token != address(token) || _amount < token.balanceOf(address(this)) - totalTokenAmount, "invalid amount");
         IERC20(_token).safeTransfer(msg.sender, _amount);
     }
 }
