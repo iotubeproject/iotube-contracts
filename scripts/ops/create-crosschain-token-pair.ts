@@ -22,7 +22,7 @@ async function main() {
   )
   const receipt = await createTx.wait()
   if (receipt.status === 1) {
-    const log = CrosschainERC20FactoryV2Factory.interface.parseLog(receipt.logs[0])
+    const log = CrosschainERC20FactoryV2Factory.interface.parseLog(receipt.logs[2])
     if(!deployments.pairs) {
       deployments.pairs = {}
     }

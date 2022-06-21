@@ -76,6 +76,10 @@ contract Timelock {
     return txHash;
   }
 
+  function computeHash(address target, uint value, string memory signature, bytes memory data, uint eta) external pure returns (bytes32) {
+    return keccak256(abi.encode(target, value, signature, data, eta));
+  }
+
   function cancelTransaction(address target, uint value, string memory signature, bytes memory data, uint eta) public {
     require(msg.sender == admin, "Timelock::cancelTransaction: Call must come from admin.");
 
