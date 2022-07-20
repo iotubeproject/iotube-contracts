@@ -1,6 +1,6 @@
 # iotube contracts
 
-This repo is for iotube v6, multi-chain tokens. V0.2 is the version being worked on. New tokens introduced here will be CrossChain Tokens that can be wrap/unwrapped from multiple tokens from mutiple chains. 
+This repo is for iotube v6, multi-chain tokens. V0.2 is the version being worked on. New tokens introduced here will be CrossChain Tokens that can be wrap/unwrapped from multiple tokens from mutiple chains.
 
 
 ## Develop
@@ -19,6 +19,10 @@ remixd -s .  --remix-ide https://remix.ethereum.org
 
 
 ## Deployment
+
+```
+yarn compile
+```
 
 ```
 export TUBE_ID=

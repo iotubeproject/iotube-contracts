@@ -10,10 +10,14 @@ async function main() {
   const CrosschainERC20FactoryV2Factory = await ethers.getContractFactory("CrosschainERC20FactoryV2")
   const factory = CrosschainERC20FactoryV2Factory.attach(deployments.crosschainERC20Factory) as CrosschainERC20FactoryV2
 
+  const tokenSymbol = "cBUSD";
+  const tokenName = "Crosschain BUSD";
+  const decimal = 18;
+
   const createTx = await factory.createCrosschainERC20(
-    "Crosschain USDT",
-    "cUSDT",
-    6
+    tokenName,
+    tokenSymbol,
+    decimal
   )
   const receipt = await createTx.wait()
   if (receipt.status === 1) {
@@ -21,7 +25,7 @@ async function main() {
     if(!deployments.crosschainToken) {
       deployments.crosschainToken = {}
     }
-    deployments.crosschainToken["cUSDT"] = log.args.token
+    deployments.crosschainToken[tokenSymbol] = log.args.token
     console.log(`create crosschain token deployed at ${log.args.token}`)
   } else {
     console.log("create crosschain token fail")
@@ -31,7 +35,7 @@ async function main() {
 
 main()
   .then(() => process.exit(0))
-  .catch((error) => { 
+  .catch((error) => {
     console.error(error)
     process.exit(1)
   })

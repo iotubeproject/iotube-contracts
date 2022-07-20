@@ -66,7 +66,7 @@ export default {
         chainId: 56,
     },
     polygon: {
-        url: 'https://rpc-mainnet.matic.network/',
+        url: 'https://polygon-rpc.com/',
         accounts: accounts,
         chainId: 137,
     },

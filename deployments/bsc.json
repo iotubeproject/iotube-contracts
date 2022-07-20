@@ -1,0 +1,26 @@
+{
+    "emergencyOperator": "0x3664f368dE9F5f04cD3165F4cFE04c8e4099ddBa",
+    "lord": "0xF9E4Dff1d01E44a44a64Df5450F513fbD19326C2",
+    "ledger": "0x47AC439e3cC41fD261BC96bAf4311a266883772a",
+    "verifier": "0x077ad1bF8E10d2d4eBeD0265E125588d48142c4E",
+    "tube": "0x10eA161Ab39aAcb58b7c00e87aB141d9AbCB0B70",
+    "minterDAO": "0xC7d50D0aF7F19C016FE6469Eef73803E7Be0741f",
+    "crosschainERC20Factory": "0x5465b93088eD24b81e31FA76256d5b4A64447295",
+    "erc20TubeRouter": "0xE97720A1F0e5534a1474ca4D58b0E41FC1072541",
+    "crosschainToken": {
+        "cUSDT": "0xfEC51632aF0CF8075e6F391b5F7dC33E28B375C4",
+        "cUSDC": "0x100Cb68fdEA6Fd2D1C3EC29C06Dd35A63f29547A",
+        "cBUSD": "0x8D9EFF68052e8F9Ec89179D1402eB57Dbd6d5048"
+    },
+    "pairs": {
+        "cUSDT": [
+            "0x6f427e3Ce9b0E37314A4E2dbb70A125C185D43a5"
+        ],
+        "cUSDC": [
+            "0x32Cd8B9c114a1A61aD3DCB107802240d2fC9878c"
+        ],
+        "cBUSD": [
+            "0x8ffc6C03441A2E810950E175C96915bB58221742"
+        ]
+    }
+}
